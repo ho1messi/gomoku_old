@@ -1,0 +1,13 @@
+[package]
+name = "gomoku"
+version = "0.1.0"
+authors = ["Ho1messi <1017145733@qq.com>"]
+
+[dependencies.backend]
+path = "libs/backend"
+
+[dependencies.bot]
+path = "libs/bot"
+
+[dependencies]
+sciter-rs = "0.5.42"
