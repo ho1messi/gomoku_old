@@ -16,18 +16,26 @@ pub enum GameStatus {
     GsGameContinue,
 }
 
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+pub enum BoardOperation {
+    BoPutChess(ChessType),
+    BoRemoveChess,
+}
+
 pub struct RuleChecker<'a> {
-    board: &'a Board,
+    board: *const Board,
     status: GameStatus,
+    score: i32,
     tuples: Vec<Tuple<'a>>,
     tuple_indices: HashMap<MoveDirection, usize>,
 }
 
 impl<'a> RuleChecker<'a> {
-    pub fn create_with_detail(board: &'a Board) -> Self {
+    pub fn create_with_detail(board: *const Board) -> Self {
         let mut rule_checker = RuleChecker {
             board,
             status: GsGameContinue,
+            score: 0,
             tuples: Vec::new(),
             tuple_indices: HashMap::new(),
         };
@@ -54,8 +62,16 @@ impl<'a> RuleChecker<'a> {
         return self.status;
     }
 
+    pub fn get_evaluation(&self) -> i32 {
+        return 0;
+    }
+
+    pub fn update_option_evaluation(&self, row: usize, col: usize, op: BoardOperation) {
+
+    }
+
     fn set_all_tuples(&mut self) {
-        let board_cp_count = self.board.size();
+        let board_cp_count = unsafe { (*self.board).size() };
         let board_tp_count = board_cp_count - 5;
         let mut index = 0;
 
@@ -71,7 +87,7 @@ impl<'a> RuleChecker<'a> {
                                 board_tp_count, board_tp_count);
         self.tuple_indices.insert(MdDownRight, index);
 
-        index = self.set_tuples(MdDownLeft, 0, 0,
+        index = self.set_tuples(MdDownLeft, 0, 4,
                                 board_tp_count, board_tp_count);
         self.tuple_indices.insert(MdDownLeft, index);
     }
@@ -83,7 +99,10 @@ impl<'a> RuleChecker<'a> {
 
         for row in row_offset..row_end {
             for col in col_offset..col_end {
-                self.tuples.push(Tuple::create_with_md(5, self.board, row, col, md));
+                unsafe {
+                    self.tuples.push(Tuple::create_with_md(5, &*self.board,
+                                                           row, col, md));
+                }
             }
         }
 

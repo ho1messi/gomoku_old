@@ -8,17 +8,22 @@ pub struct Tuple<'a> {
 }
 
 impl<'a> Tuple<'a> {
-    pub fn create_with_md(size: usize, board: &'a Board, row: usize,
-                      col: usize, md: MoveDirection) -> Self {
+    pub fn create_with_md(size: usize, board: &'a Board, mut row: usize,
+                      mut col: usize, md: MoveDirection) -> Self {
         let mut coords = vec![Coord{ row, col}];
         let mut cross_points = vec![board.get_cross_point_at(row, col)];
         for _i in 1..size {
-            let (row, col) = board.move_to(row, col, md).unwrap();
+            let coord = board.move_to(row, col, md).unwrap();
+            row = coord.0; col = coord.1;
             coords.push(Coord{ row, col });
             cross_points.push(board.get_cross_point_at(row, col));
         }
 
         return Tuple { size, coords, cross_points };
+    }
+
+    pub fn coord_at(&self, index: usize) -> Coord {
+        return self.coords[index];
     }
 
     pub fn is_index_valid(&self, index: usize) -> bool {
