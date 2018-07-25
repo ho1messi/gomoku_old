@@ -14,16 +14,27 @@ pub enum MoveDirection {
     MdDownRight,
 }
 
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+pub enum BoardOperation {
+    BoPutChess(ChessType),
+    BoRemoveChess,
+}
+
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Coord {
     pub row: usize,
     pub col: usize,
 }
 
+pub trait BoardObserver {
+    fn board_updated(&self, row: usize, col: usize, op: BoardOperation);
+}
+
 pub struct Board {
     size: usize,
     cp_count: usize,
     cross_points: Vec<CrossPoint>,
+    observers: Vec<Box<BoardObserver>>,
 }
 
 impl Board {
@@ -32,6 +43,7 @@ impl Board {
             size: 15,
             cp_count: 15 * 15,
             cross_points: Vec::new(),
+            observers: Vec::new(),
         };
 
         b.cross_points.resize(b.cp_count, CrossPoint::new());
@@ -43,6 +55,7 @@ impl Board {
             size,
             cp_count: size * size,
             cross_points: Vec::new(),
+            observers: Vec::new(),
         };
 
         b.cross_points.resize(b.cp_count, CrossPoint::new());
@@ -88,6 +101,8 @@ impl Board {
 
         let index = self.coord_to_index(row, col);
         self.cross_points[index].put_chess(chess);
+
+        self.notify_observers(row, col, BoardOperation::BoPutChess(chess));
     }
 
     pub fn remove_chess_at(& mut self, row: usize, col: usize) {
@@ -97,6 +112,8 @@ impl Board {
 
         let index = self.coord_to_index(row, col);
         self.cross_points[index].remove_chess();
+
+        self.notify_observers(row, col, BoardOperation::BoRemoveChess);
     }
 
     pub fn get_cross_point_type_at(&self, row: usize, col: usize) -> CrossPointType {
@@ -142,5 +159,16 @@ impl Board {
 
     pub fn get_cross_point_at(&self, row: usize, col: usize) -> &CrossPoint {
         return &self.cross_points[self.coord_to_index(row, col)];
+    }
+
+    pub fn add_observers<T>(&mut self, observer: T)
+        where T: BoardObserver + 'static {
+        self.observers.push(Box::new(observer));
+    }
+
+    pub fn notify_observers(&self, row: usize, col: usize, op: BoardOperation) {
+        for observer in self.observers.iter() {
+            observer.board_updated(row, col, op);
+        }
     }
 }

@@ -16,12 +16,6 @@ pub enum GameStatus {
     GsGameContinue,
 }
 
-#[derive(Eq, PartialEq, Copy, Clone, Debug)]
-pub enum BoardOperation {
-    BoPutChess(ChessType),
-    BoRemoveChess,
-}
-
 pub struct RuleChecker<'a> {
     board: *const Board,
     status: GameStatus,
@@ -58,7 +52,7 @@ impl<'a> RuleChecker<'a> {
         return GsGameContinue;
     }
 
-    pub fn get_game_status(&self) -> GameStatus {
+    pub fn game_status(&self) -> GameStatus {
         return self.status;
     }
 
@@ -66,14 +60,16 @@ impl<'a> RuleChecker<'a> {
         return 0;
     }
 
-    pub fn update_option_evaluation(&self, row: usize, col: usize, op: BoardOperation) {
-
+    pub fn update_option_evaluation(&mut self, row: usize, col: usize, op: BoardOperation) {
+        println!("======================================");
+        println!("evaluation score updated!");
+        println!("======================================");
     }
 
     fn set_all_tuples(&mut self) {
         let board_cp_count = unsafe { (*self.board).size() };
         let board_tp_count = board_cp_count - 5;
-        let mut index = 0;
+        let mut index;
 
         index = self.set_tuples(MdRight, 0, 0,
                                 board_cp_count, board_tp_count);
