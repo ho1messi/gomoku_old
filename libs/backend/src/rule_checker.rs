@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use super::evaluation_dfa::*;
 use super::board::*;
 use super::tuple::*;
 use super::cross_point::*;
@@ -61,9 +62,15 @@ impl<'a> RuleChecker<'a> {
     }
 
     pub fn update_option_evaluation(&mut self, row: usize, col: usize, op: BoardOperation) {
-        println!("======================================");
-        println!("evaluation score updated!");
-        println!("======================================");
+        let check_directions = vec![
+            (MdLeft, MdRight), (MdUp, MdDown),
+            (MdUpLeft, MdDownRight), (MdUpRight, MdDownLeft)
+        ];
+
+        for direction in check_directions.iter() {
+            self.update_direction_evaluation(row, col, direction.0,
+                                             direction.1, op);
+        }
     }
 
     fn set_all_tuples(&mut self) {
@@ -96,12 +103,45 @@ impl<'a> RuleChecker<'a> {
         for row in row_offset..row_end {
             for col in col_offset..col_end {
                 unsafe {
-                    self.tuples.push(Tuple::create_with_md(5, &*self.board,
-                                                           row, col, md));
+                    self.tuples.push(
+                        Tuple::create_with_md(5, &*self.board,
+                                              row, col, md));
                 }
             }
         }
 
         return index;
     }
+
+    unsafe fn update_direction_evaluation(&mut self, mut row: usize, mut col: usize,
+                                   md1: MoveDirection, md2: MoveDirection, op: BoardOperation) {
+        let line = Vec::new();
+        let chess = match op {
+            BoardOperation::BoPutChess(c) => c,
+            BoardOperation::BoRemoveChess(c) => c,
+        };
+
+        let mut num: u32 = 0;
+        let mut different_flag = false;
+        while true {
+            match *self.board.move_to(row, col, md1) {
+                Ok(coord) => {row = coord.0; col = coord.1},
+                Err(_) => break,
+            }
+
+            if *self.board.have_chess_at(row, col) &&
+                chess != *self.board.get_chess_at(row, col) {
+                different_flag = true;
+                break;
+            } else {
+                num += 1;
+            }
+
+            if num == 5 {
+                break;
+            }
+        }
+    }
+
+    unsafe fn tuple_evaluation(&mut self, mut row: usize, mut col: usize, md: MoveDirection, )
 }

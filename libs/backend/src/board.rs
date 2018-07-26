@@ -17,7 +17,7 @@ pub enum MoveDirection {
 #[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub enum BoardOperation {
     BoPutChess(ChessType),
-    BoRemoveChess,
+    BoRemoveChess(ChessType),
 }
 
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -105,15 +105,17 @@ impl Board {
         self.notify_observers(row, col, BoardOperation::BoPutChess(chess));
     }
 
-    pub fn remove_chess_at(& mut self, row: usize, col: usize) {
+    pub fn remove_chess_at(& mut self, row: usize, col: usize) -> ChessType {
         if !self.is_index_valid(row, col) {
             panic!("coord is not valid");
         }
 
         let index = self.coord_to_index(row, col);
+        let chess = self.cross_points[index].get_chess();
         self.cross_points[index].remove_chess();
 
-        self.notify_observers(row, col, BoardOperation::BoRemoveChess);
+        self.notify_observers(row, col, BoardOperation::BoRemoveChess(chess));
+        return chess;
     }
 
     pub fn get_cross_point_type_at(&self, row: usize, col: usize) -> CrossPointType {
