@@ -1,20 +1,20 @@
 use super::rule_checker::*;
 use super::board::*;
 
-pub struct RuleCheckerObserver <'a>{
-    rule_checker: *mut RuleChecker<'a>,
+pub struct RuleCheckerObserver {
+    rule_checker: *mut RuleChecker,
 }
 
-impl<'a> BoardObserver for RuleCheckerObserver<'a> {
-    fn board_updated(&self, row: usize, col: usize, op: BoardOperation) {
+impl BoardObserver for RuleCheckerObserver {
+    fn board_updated(&self, event: BoardEvent) {
         unsafe {
-            (*self.rule_checker).update_option_evaluation(row, col, op);
+            (*self.rule_checker).update_option_evaluation(event);
         }
     }
 }
 
-impl<'a> RuleCheckerObserver<'a> {
-    pub fn create_with_detail(rule_checker: *mut RuleChecker<'a>) -> Self {
+impl RuleCheckerObserver {
+    pub fn create_with_detail(rule_checker: *mut RuleChecker) -> Self {
         return RuleCheckerObserver {
             rule_checker,
         }

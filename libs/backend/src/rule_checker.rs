@@ -1,4 +1,7 @@
+use std::rc::*;
+use std::cell::*;
 use std::collections::HashMap;
+use std::collections::VecDeque;
 
 use super::evaluation_dfa::*;
 use super::board::*;
@@ -10,6 +13,7 @@ use super::cross_point::CrossPointType::*;
 use super::cross_point::ChessType::*;
 
 use self::GameStatus::*;
+use self::MovesEndReason::*;
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub enum GameStatus {
@@ -17,16 +21,34 @@ pub enum GameStatus {
     GsGameContinue,
 }
 
-pub struct RuleChecker<'a> {
-    board: *const Board,
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+pub enum MovesEndReason {
+    MerBoarder(Coord),
+    MerDifferenceChess(CoordAndChess),
+    MerEnoughChess(Coord),
+}
+
+impl MovesEndReason {
+    pub fn coord(&self) -> Coord {
+        match self {
+            MerBoarder(coord) => return *coord,
+            MerDifferenceChess(coord_and_chess) => return coord_and_chess.coord,
+            MerEnoughChess(coord) => return *coord,
+        }
+    }
+}
+
+
+pub struct RuleChecker {
+    board: Weak<RefCell<Board>>,
     status: GameStatus,
     score: i32,
-    tuples: Vec<Tuple<'a>>,
+    tuples: Vec<Tuple>,
     tuple_indices: HashMap<MoveDirection, usize>,
 }
 
-impl<'a> RuleChecker<'a> {
-    pub fn create_with_detail(board: *const Board) -> Self {
+impl RuleChecker {
+    pub fn create_with_detail(board: Weak<RefCell<Board>>) -> Self {
         let mut rule_checker = RuleChecker {
             board,
             status: GsGameContinue,
@@ -58,90 +80,122 @@ impl<'a> RuleChecker<'a> {
     }
 
     pub fn get_evaluation(&self) -> i32 {
-        return 0;
+        return self.score;
     }
 
-    pub fn update_option_evaluation(&mut self, row: usize, col: usize, op: BoardOperation) {
+    pub fn update_option_evaluation(&mut self, event: BoardEvent) {
         let check_directions = vec![
             (MdLeft, MdRight), (MdUp, MdDown),
             (MdUpLeft, MdDownRight), (MdUpRight, MdDownLeft)
         ];
 
+        let coord = event.get_coord();
         for direction in check_directions.iter() {
-            self.update_direction_evaluation(row, col, direction.0,
-                                             direction.1, op);
+            self.update_line_evaluation(coord, direction.0, direction.1, event);
+        }
+    }
+
+    fn get_board_rc(&self) -> Rc<RefCell<Board>> {
+        match self.board.upgrade() {
+            Some(board_rc) => return board_rc,
+            None => panic!("Can not upgrade weak board to rc!"),
         }
     }
 
     fn set_all_tuples(&mut self) {
-        let board_cp_count = unsafe { (*self.board).size() };
+        let board = self.get_board_rc();
+        let board_cp_count = board.borrow().size();
         let board_tp_count = board_cp_count - 5;
         let mut index;
 
-        index = self.set_tuples(MdRight, 0, 0,
-                                board_cp_count, board_tp_count);
+        index = self.set_tuples(MdRight, Coord{row: 0, col: 0},
+                                Coord{row: board_cp_count, col: board_tp_count});
         self.tuple_indices.insert(MdRight, index);
 
-        index = self.set_tuples(MdDown, 0, 0,
-                                board_tp_count, board_cp_count);
+        index = self.set_tuples(MdDown, Coord{row: 0, col: 0},
+                                Coord{row: board_tp_count, col: board_cp_count});
         self.tuple_indices.insert(MdDown, index);
 
-        index = self.set_tuples(MdDownRight, 0, 0,
-                                board_tp_count, board_tp_count);
+        index = self.set_tuples(MdDownRight, Coord{row: 0, col: 0},
+                                Coord{row: board_tp_count, col: board_tp_count});
         self.tuple_indices.insert(MdDownRight, index);
 
-        index = self.set_tuples(MdDownLeft, 0, 4,
-                                board_tp_count, board_tp_count);
+        index = self.set_tuples(MdDownLeft, Coord{row: 0, col: 4},
+                                Coord{row: board_tp_count, col: board_tp_count});
         self.tuple_indices.insert(MdDownLeft, index);
     }
 
-    fn set_tuples(&mut self, md: MoveDirection, row_offset: usize, col_offset: usize,
-                  row_count: usize, col_count: usize) -> usize {
-        let (row_end, col_end) = (row_offset + row_count, col_offset + col_count);
+    fn set_tuples(&mut self, md: MoveDirection, offset: Coord, count: Coord) -> usize {
+        let end = offset + count;
         let index = self.tuples.len();
 
-        for row in row_offset..row_end {
-            for col in col_offset..col_end {
-                unsafe {
-                    self.tuples.push(
-                        Tuple::create_with_md(5, &*self.board,
-                                              row, col, md));
-                }
+        for row in offset.row..end.row {
+            for col in offset.col..end.col {
+                let board_rc = self.get_board_rc();
+                self.tuples.push(Tuple::create_with_md(5, board_rc, Coord{row, col}, md));
             }
         }
 
         return index;
     }
 
-    unsafe fn update_direction_evaluation(&mut self, mut row: usize, mut col: usize,
-                                   md1: MoveDirection, md2: MoveDirection, op: BoardOperation) {
-        let line = Vec::new();
-        let chess = match op {
-            BoardOperation::BoPutChess(c) => c,
-            BoardOperation::BoRemoveChess(c) => c,
-        };
+    fn update_line_evaluation(&mut self, coord: Coord, md1: MoveDirection,
+                              md2: MoveDirection, event: BoardEvent) {
+        /*
+        let mut line = VecDeque::new();
+        let mut coord_e = event.get_coord();
+        let chess = event.get_chess();
+        */
 
-        let mut num: u32 = 0;
-        let mut different_flag = false;
+
+        /*
+        let mut line = Vec::new();
+        let chess = event.get_chess();
+        let mut row_t = row; let mut col_t = col;
+
+        unsafe {
+            let flag1 = self.move_until(&mut row_t, &mut col_t, md1, chess, &line);
+            line.clear();
+            let flag2 = self.move_until(&mut row_t, &mut col_t, md2, chess, &line);
+        }
+        */
+
+    }
+
+    /*
+    unsafe fn move_until(&self, row: &mut usize, col: &mut usize,
+                         md: MoveDirection, chess: ChessType,
+                         cross_points: &mut Vec<CrossPointType>) -> MovesEndReason {
+        let mut num = 1;
+
+        /*
         while true {
-            match *self.board.move_to(row, col, md1) {
+            *cross_points.push(*self.board.get_cross_point_type_at(*row, *col));
+
+            match *self.board.move_to(*row, *col, md) {
                 Ok(coord) => {row = coord.0; col = coord.1},
                 Err(_) => break,
             }
 
-            if *self.board.have_chess_at(row, col) &&
-                chess != *self.board.get_chess_at(row, col) {
-                different_flag = true;
-                break;
+            if *self.board.have_chess_at(*row, *col) {
+                if chess == *self.board.get_chess_at(*row, *col) {
+                    num += 1;
+                } else {
+                    return MerDifferenceChess;
+                }
             } else {
-                num += 1;
-            }
-
-            if num == 5 {
-                break;
+                if num == 5 {
+                    return MerEnoughChess;
+                } else {
+                    num += 1;
+                }
             }
         }
-    }
+        */
 
-    unsafe fn tuple_evaluation(&mut self, mut row: usize, mut col: usize, md: MoveDirection, )
+        return MerBoarder;
+    }
+    */
+
+    //unsafe fn tuple_evaluation(&mut self, mut row: usize, mut col: usize, md: MoveDirection, )
 }

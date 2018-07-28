@@ -7,6 +7,15 @@ pub enum ChessType {
     CtWhite,
 }
 
+impl ChessType {
+    pub fn get_different_chess(&self) -> ChessType {
+        match *self {
+            CtBlack => return CtWhite,
+            CtWhite => return CtBlack,
+        }
+    }
+}
+
 #[derive(Hash, Eq, PartialEq, Copy, Clone, Debug)]
 pub enum CrossPointType {
     CptEmpty,

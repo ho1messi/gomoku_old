@@ -1,3 +1,6 @@
+use std::rc::*;
+use std::cell::*;
+
 use super::super::cross_point::*;
 use super::super::board::*;
 use super::super::tuple::*;
@@ -8,26 +11,26 @@ use super::super::board::MoveDirection::*;
 
 #[test]
 fn it_works() {
-    let mut board = Board::create_with_size(5);
-    for row in 0..5 {                                                           // X O _ X O
-        for col in 0..5 {                                                       // _ X O _ X
-            match (row * 5 + col) % 3 {                                         // O _ X O _
-                0 => board.put_chess_at(row, col, ChessType::CtBlack),    // X O _ X O
-                1 => board.put_chess_at(row, col, ChessType::CtWhite),    // _ X O _ X
+    let mut board = Rc::new(RefCell::new(Board::create_with_size(5)));
+    for row in 0..5 {                                                            // X O _ X O
+    for col in 0..5 {                                                            // _ X O _ X
+            match (row * 5 + col) % 3 {                                          // O _ X O _
+                0 => board.borrow_mut().put_chess_at(Coord{row, col}, ChessType::CtBlack),    // X O _ X O
+                1 => board.borrow_mut().put_chess_at(Coord{row, col}, ChessType::CtWhite),    // _ X O _ X
                 _ => {},
             }
         }
     }
 
-    let tuple1 = Tuple::create_with_md(5, &board, 0, 0, MdRight);
-    let tuple2 = Tuple::create_with_md(5, &board, 0, 0, MdDown);
-    let tuple3 = Tuple::create_with_md(5, &board, 0, 0, MdDownRight);
-    let tuple4 = Tuple::create_with_md(5, &board, 0, 4, MdDownLeft);
+    let tuple1 = Tuple::create_with_md(5, board.clone(), Coord{row: 0, col: 0}, MdRight);
+    let tuple2 = Tuple::create_with_md(5, board.clone(), Coord{row: 0, col: 0}, MdDown);
+    let tuple3 = Tuple::create_with_md(5, board.clone(), Coord{row: 0, col: 0}, MdDownRight);
+    let tuple4 = Tuple::create_with_md(5, board.clone(), Coord{row: 0, col: 4}, MdDownLeft);
 
-    let tuple_r1 = Tuple::create_with_md(5, &board, 4, 4, MdLeft);
-    let tuple_r2 = Tuple::create_with_md(5, &board, 4, 4, MdUp);
-    let tuple_r3 = Tuple::create_with_md(5, &board, 4, 4, MdUpLeft);
-    let tuple_r4 = Tuple::create_with_md(5, &board, 4, 0, MdUpRight);
+    let tuple_r1 = Tuple::create_with_md(5, board.clone(), Coord{row: 4, col: 4}, MdLeft);
+    let tuple_r2 = Tuple::create_with_md(5, board.clone(), Coord{row: 4, col: 4}, MdUp);
+    let tuple_r3 = Tuple::create_with_md(5, board.clone(), Coord{row: 4, col: 4}, MdUpLeft);
+    let tuple_r4 = Tuple::create_with_md(5, board.clone(), Coord{row: 4, col: 0}, MdUpRight);
 
     assert_eq!(tuple1.get_cross_point_type_at(0), CptChess(CtBlack));
     assert_eq!(tuple1.get_cross_point_type_at(2), CptEmpty);
