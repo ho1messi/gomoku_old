@@ -45,20 +45,38 @@ pub struct RuleChecker {
     score: i32,
     tuples: Vec<Tuple>,
     tuple_indices: HashMap<MoveDirection, usize>,
+    self_weak: Weak<RefCell<RuleChecker>>,
+}
+
+impl BoardObserver for RuleChecker {
+    fn board_updated(&mut self, event: BoardEvent) {
+        let check_directions = vec![
+            (MdLeft, MdRight), (MdUp, MdDown),
+            (MdUpLeft, MdDownRight), (MdUpRight, MdDownLeft)
+        ];
+
+        let coord = event.get_coord();
+        for direction in check_directions.iter() {
+            self.update_line_evaluation(coord, direction.0, direction.1, event);
+        }
+    }
 }
 
 impl RuleChecker {
-    pub fn create_with_detail(board: Weak<RefCell<Board>>) -> Self {
+    pub fn create_with_detail(board: Weak<RefCell<Board>>) -> Rc<RefCell<Self>> {
         let mut rule_checker = RuleChecker {
             board,
             status: GsGameContinue,
             score: 0,
             tuples: Vec::new(),
             tuple_indices: HashMap::new(),
+            self_weak: Weak::new(),
         };
 
         rule_checker.set_all_tuples();
-        return rule_checker;
+        let rule_checker_rc = Rc::new(RefCell::new(rule_checker));
+        rule_checker_rc.borrow_mut().self_weak = Rc::downgrade(&rule_checker_rc.clone());
+        return rule_checker_rc;
     }
 
     pub fn check_game_status(&mut self) -> GameStatus {
@@ -81,18 +99,6 @@ impl RuleChecker {
 
     pub fn get_evaluation(&self) -> i32 {
         return self.score;
-    }
-
-    pub fn update_option_evaluation(&mut self, event: BoardEvent) {
-        let check_directions = vec![
-            (MdLeft, MdRight), (MdUp, MdDown),
-            (MdUpLeft, MdDownRight), (MdUpRight, MdDownLeft)
-        ];
-
-        let coord = event.get_coord();
-        for direction in check_directions.iter() {
-            self.update_line_evaluation(coord, direction.0, direction.1, event);
-        }
     }
 
     fn get_board_rc(&self) -> Rc<RefCell<Board>> {

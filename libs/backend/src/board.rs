@@ -81,7 +81,7 @@ impl BoardEvent {
 
 
 pub trait BoardObserver {
-    fn board_updated(&self, event: BoardEvent);
+    fn board_updated(&mut self, event: BoardEvent);
 }
 
 
@@ -89,7 +89,8 @@ pub struct Board {
     size: usize,
     cp_count: usize,
     cross_points: Vec<Rc<RefCell<CrossPoint>>>,
-    observers: Vec<Box<BoardObserver>>,
+    observers: Vec<Weak<RefCell<BoardObserver>>>,
+    //observers: Vec<Box<BoardObserver>>,
 }
 
 impl Board {
@@ -101,7 +102,7 @@ impl Board {
             observers: Vec::new(),
         };
 
-        for i in 0..b.cp_count {
+        for _i in 0..b.cp_count {
             b.cross_points.push(Rc::new(RefCell::new(CrossPoint::new())));
         }
         return b;
@@ -115,7 +116,7 @@ impl Board {
             observers: Vec::new(),
         };
 
-        for i in 0..b.cp_count {
+        for _i in 0..b.cp_count {
             b.cross_points.push(Rc::new(RefCell::new(CrossPoint::new())));
         }
         return b;
@@ -232,17 +233,20 @@ impl Board {
     }
 
     pub fn get_cross_point_at(&self, coord: Coord) -> Rc<RefCell<CrossPoint>> {
-        return Rc::clone(&self.cross_points[self.coord_to_index(coord)]);
+        return self.cross_points[self.coord_to_index(coord)].clone();
     }
 
-    pub fn add_observers<T>(&mut self, observer: T)
+    pub fn add_observers<T>(&mut self, observer: Weak<RefCell<T>>)
         where T: BoardObserver + 'static {
-        self.observers.push(Box::new(observer));
+        self.observers.push(observer);
     }
 
-    pub fn notify_observers(&self, event: BoardEvent) {
-        for observer in self.observers.iter() {
-            observer.board_updated(event);
+    pub fn notify_observers(&mut self, event: BoardEvent) {
+        for i in 0..self.observers.len() {
+            match self.observers[i].upgrade() {
+                Some(observer_rc) => {observer_rc.borrow_mut().board_updated(event);},
+                None => {self.observers.remove(i);},
+            }
         }
     }
 }
