@@ -7,13 +7,15 @@ use super::evaluation_dfa::*;
 use super::board::*;
 use super::tuple::*;
 use super::cross_point::*;
+use super::utils::*;
 
 use super::board::MoveDirection::*;
 use super::cross_point::CrossPointType::*;
 use super::cross_point::ChessType::*;
 
 use self::GameStatus::*;
-use self::MovesEndReason::*;
+use self::MoveFailedType::*;
+use self::MoveResult::*;
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub enum GameStatus {
@@ -22,18 +24,22 @@ pub enum GameStatus {
 }
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug)]
-pub enum MovesEndReason {
-    MerBoarder(Coord),
-    MerDifferenceChess(CoordAndChess),
-    MerEnoughChess(Coord),
+pub enum MoveFailedType {
+    MftBoarder,
+    MftDifferenceChess,
 }
 
-impl MovesEndReason {
-    pub fn coord(&self) -> Coord {
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+pub enum MoveResult {
+    MrSuccessful(CoordAndCrossPoint),
+    MrFailed(MoveFailedType),
+}
+
+impl MoveResult {
+    pub fn is_successful(&self) -> bool {
         match self {
-            MerBoarder(coord) => return *coord,
-            MerDifferenceChess(coord_and_chess) => return coord_and_chess.coord,
-            MerEnoughChess(coord) => return *coord,
+            MrSuccessful(_) => return true,
+            MrFailed(_) => return false,
         }
     }
 }
@@ -51,19 +57,18 @@ pub struct RuleChecker {
 impl BoardObserver for RuleChecker {
     fn board_updated(&mut self, event: BoardEvent) {
         let check_directions = vec![
-            (MdLeft, MdRight), (MdUp, MdDown),
-            (MdUpLeft, MdDownRight), (MdUpRight, MdDownLeft)
+            [MdLeft, MdRight], [MdUp, MdDown],
+            [MdUpLeft, MdDownRight], [MdUpRight, MdDownLeft]
         ];
 
-        let coord = event.get_coord();
         for direction in check_directions.iter() {
-            self.update_line_evaluation(coord, direction.0, direction.1, event);
+            self.update_evaluation_by_event(direction, event);
         }
     }
 }
 
 impl RuleChecker {
-    pub fn create_with_detail(board: Weak<RefCell<Board>>) -> Rc<RefCell<Self>> {
+    pub fn create_with_detail(board: Weak<RefCell<Board>>) -> RuleChecker {
         let mut rule_checker = RuleChecker {
             board,
             status: GsGameContinue,
@@ -73,10 +78,7 @@ impl RuleChecker {
             self_weak: Weak::new(),
         };
 
-        rule_checker.set_all_tuples();
-        let rule_checker_rc = Rc::new(RefCell::new(rule_checker));
-        rule_checker_rc.borrow_mut().self_weak = Rc::downgrade(&rule_checker_rc.clone());
-        return rule_checker_rc;
+        return rule_checker;
     }
 
     pub fn check_game_status(&mut self) -> GameStatus {
@@ -145,15 +147,43 @@ impl RuleChecker {
         return index;
     }
 
-    fn update_line_evaluation(&mut self, coord: Coord, md1: MoveDirection,
-                              md2: MoveDirection, event: BoardEvent) {
-        /*
-        let mut line = VecDeque::new();
-        let mut coord_e = event.get_coord();
+    fn update_evaluation_by_event(&mut self, md: &[MoveDirection], event: BoardEvent) {
+        let coord = event.get_coord();
         let chess = event.get_chess();
-        */
+        let mut coord_md = [coord, coord];
+        let mut first_chess = [None, None];
+        let mut stop_flag = [false, false];
+        let mut count = 0; let max_count = 6;
+        let mut i = 1;
 
+        while count < max_count {
+            i = (i + 1) % 2;
+            if stop_flag[i] != true {
+                match self.move_to(CoordAndChess { coord: coord_md[i], chess }, md[i]) {
+                    MrSuccessful(coord_and_cross_point) => {
+                        coord_md[i] = coord_and_cross_point.coord;
+                        count += 1;
+                        if first_chess[i] == None {
+                            match coord_and_cross_point.cross_point {
+                                CptChess(_) => first_chess[i] = Some(chess),
+                                CptEmpty => {},
+                            }
+                        }
+                    },
+                    MrFailed(move_failed_type) => match move_failed_type {
+                        MftDifferenceChess => {
+                            if first_chess[i] == None {
+                                first_chess[i] = Some(chess.get_different_chess());
+                            }
+                            stop_flag[i] = true;
+                        },
+                        MftBoarder => stop_flag[i] = true,
+                    }
+                }
+            }
+        }
 
+        println!("coords: {:?}", coord_md);
         /*
         let mut line = Vec::new();
         let chess = event.get_chess();
@@ -166,6 +196,29 @@ impl RuleChecker {
         }
         */
 
+    }
+
+    fn update_tuple_evaluation(&mut self, coord_and_chess: CoordAndChess,
+                               md: MoveDirection, event: BoardEvent) {
+        //let mut line = VecDeque::new();
+    }
+
+    fn move_to(&self, coord_and_chess: CoordAndChess, md: MoveDirection) -> MoveResult {
+        let board_rc = self.get_board_rc();
+        let board_ref = board_rc.borrow();
+        match board_ref.move_to(coord_and_chess.coord, md) {
+            Ok(coord) => match board_ref.get_cross_point_type_at(coord) {
+                CptEmpty => return MrSuccessful(CoordAndCrossPoint{coord, cross_point: CptEmpty}),
+                CptChess(chess) => match chess == coord_and_chess.chess {
+                    false => return MrFailed(MftDifferenceChess),
+                    _ => return MrSuccessful(CoordAndCrossPoint{coord, cross_point: CptChess(chess)}),
+                }
+            }
+            Err(error) => match error.kind {
+                ErrorKind::CoordInvalid => return MrFailed(MftBoarder),
+                _ => panic!("RuleChecker move failed with error {:?}", error.message),
+            }
+        }
     }
 
     /*

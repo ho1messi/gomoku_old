@@ -6,8 +6,8 @@ pub enum ErrorKind {
 #[derive(PartialEq, Debug)]
 #[warn(dead_code)]
 pub struct Error {
-    kind: ErrorKind,
-    message: String,
+    pub kind: ErrorKind,
+    pub message: String,
 }
 
 impl Error {

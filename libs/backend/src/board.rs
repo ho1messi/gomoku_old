@@ -51,6 +51,12 @@ pub struct CoordAndChess {
 }
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug)]
+pub struct CoordAndCrossPoint {
+    pub coord: Coord,
+    pub cross_point: CrossPointType,
+}
+
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub enum BoardEvent {
     BoPutChess(CoordAndChess),
     BoRemoveChess(CoordAndChess),
@@ -90,7 +96,6 @@ pub struct Board {
     cp_count: usize,
     cross_points: Vec<Rc<RefCell<CrossPoint>>>,
     observers: Vec<Weak<RefCell<BoardObserver>>>,
-    //observers: Vec<Box<BoardObserver>>,
 }
 
 impl Board {
@@ -143,12 +148,6 @@ impl Board {
             panic!("coord is not valid");
         }
 
-        println!("{:?}", coord);
-        println!("{}", self.coord_to_index(coord));
-        let cps = self.cross_points[self.coord_to_index(coord)].clone();
-        println!("{:?}", self.cross_points[1].borrow().get_cross_point_type());
-        println!("{:?}", cps);
-
         return self.cross_points[self.coord_to_index(coord)].borrow().have_chess();
     }
 
@@ -168,10 +167,6 @@ impl Board {
         let index = self.coord_to_index(coord);
         self.cross_points[index].borrow_mut().put_chess(chess);
 
-        for i in 0..self.size {
-            println!("{}\t{:?}", i, self.cross_points[i]);
-        }
-
         self.notify_observers(BoardEvent::BoPutChess(CoordAndChess {coord, chess}));
     }
 
@@ -183,10 +178,6 @@ impl Board {
         let index = self.coord_to_index(coord);
         let chess = self.cross_points[index].borrow().get_chess();
         self.cross_points[index].borrow_mut().remove_chess();
-
-        for i in 0..self.size {
-            println!("{}\t{:?}", i, self.cross_points[i]);
-        }
 
         self.notify_observers(BoardEvent::BoRemoveChess(CoordAndChess {coord, chess}));
         return chess;
