@@ -11,12 +11,12 @@ use super::super::board::MoveDirection::*;
 
 #[test]
 fn it_works() {
-    let mut board = Rc::new(RefCell::new(Board::create_with_size(5)));
+    let board = Board::create_with_size(5);
     for row in 0..5 {                                                            // X O _ X O
     for col in 0..5 {                                                            // _ X O _ X
             match (row * 5 + col) % 3 {                                          // O _ X O _
-                0 => board.borrow_mut().put_chess_at(Coord{row, col}, ChessType::CtBlack),    // X O _ X O
-                1 => board.borrow_mut().put_chess_at(Coord{row, col}, ChessType::CtWhite),    // _ X O _ X
+                0 => board.put_chess_at(Coord{row, col}, ChessType::CtBlack),    // X O _ X O
+                1 => board.put_chess_at(Coord{row, col}, ChessType::CtWhite),    // _ X O _ X
                 _ => {},
             }
         }

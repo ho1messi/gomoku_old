@@ -46,16 +46,15 @@ impl MoveResult {
 
 
 pub struct RuleChecker {
-    board: Weak<RefCell<Board>>,
-    status: GameStatus,
-    score: i32,
-    tuples: Vec<Tuple>,
-    tuple_indices: HashMap<MoveDirection, usize>,
-    self_weak: Weak<RefCell<RuleChecker>>,
+    board: Rc<Board>,
+    status: Cell<GameStatus>,
+    score: Cell<i32>,
+    tuples: RefCell<Vec<Tuple>>,
+    tuple_indices: RefCell<HashMap<MoveDirection, usize>>,
 }
 
 impl BoardObserver for RuleChecker {
-    fn board_updated(&mut self, event: BoardEvent) {
+    fn board_updated(&self, event: BoardEvent) {
         let check_directions = vec![
             [MdLeft, MdRight], [MdUp, MdDown],
             [MdUpLeft, MdDownRight], [MdUpRight, MdDownLeft]
@@ -68,27 +67,29 @@ impl BoardObserver for RuleChecker {
 }
 
 impl RuleChecker {
-    pub fn create_with_detail(board: Weak<RefCell<Board>>) -> RuleChecker {
-        let mut rule_checker = RuleChecker {
-            board,
-            status: GsGameContinue,
-            score: 0,
-            tuples: Vec::new(),
-            tuple_indices: HashMap::new(),
-            self_weak: Weak::new(),
-        };
+    pub fn create_with_detail(board: Rc<Board>) -> Rc<RuleChecker> {
+        let rule_checker = Rc::new(RuleChecker {
+            board: board.clone(),
+            status: Cell::new(GsGameContinue),
+            score: Cell::new(0),
+            tuples: RefCell::new(Vec::new()),
+            tuple_indices: RefCell::new(HashMap::new()),
+        });
 
+        rule_checker.set_all_tuples();
+        board.add_observers(Rc::downgrade(&rule_checker));
         return rule_checker;
     }
 
-    pub fn check_game_status(&mut self) -> GameStatus {
-        for tuple in self.tuples.iter() {
+    pub fn check_game_status(&self) -> GameStatus {
+        for tuple in self.tuples.borrow().iter() {
+
             if tuple.count(CptChess(CtBlack)) == 5 {
-                self.status = GsGameOver(CtBlack);
-                return self.status;
+                self.status.set(GsGameOver(CtBlack));
+                return self.status.get();
             } else if tuple.count(CptChess(CtWhite)) == 5 {
-                self.status = GsGameOver(CtWhite);
-                return self.status;
+                self.status.set(GsGameOver(CtWhite));
+                return self.status.get();
             }
         }
 
@@ -96,58 +97,48 @@ impl RuleChecker {
     }
 
     pub fn game_status(&self) -> GameStatus {
-        return self.status;
+        return self.status.get();
     }
 
     pub fn get_evaluation(&self) -> i32 {
-        return self.score;
+        return self.score.get();
     }
 
-    fn get_board_rc(&self) -> Rc<RefCell<Board>> {
-        match self.board.upgrade() {
-            Some(board_rc) => return board_rc,
-            None => panic!("Can not upgrade weak board to rc!"),
-        }
-    }
-
-    fn set_all_tuples(&mut self) {
-        let board = self.get_board_rc();
-        let board_cp_count = board.borrow().size();
+    fn set_all_tuples(&self) {
+        let board_cp_count = self.board.size();
         let board_tp_count = board_cp_count - 5;
-        let mut index;
+        let mut tuple_indices_ref = self.tuple_indices.borrow_mut();
 
-        index = self.set_tuples(MdRight, Coord{row: 0, col: 0},
-                                Coord{row: board_cp_count, col: board_tp_count});
-        self.tuple_indices.insert(MdRight, index);
+        tuple_indices_ref.insert(MdRight, self.tuples.borrow().len());
+        self.set_tuples(MdRight, Coord{row: 0, col: 0},
+                        Coord{row: board_cp_count, col: board_tp_count});
 
-        index = self.set_tuples(MdDown, Coord{row: 0, col: 0},
-                                Coord{row: board_tp_count, col: board_cp_count});
-        self.tuple_indices.insert(MdDown, index);
+        tuple_indices_ref.insert(MdDown, self.tuples.borrow().len());
+        self.set_tuples(MdDown, Coord{row: 0, col: 0},
+                        Coord{row: board_tp_count, col: board_cp_count});
 
-        index = self.set_tuples(MdDownRight, Coord{row: 0, col: 0},
-                                Coord{row: board_tp_count, col: board_tp_count});
-        self.tuple_indices.insert(MdDownRight, index);
+        tuple_indices_ref.insert(MdDownRight, self.tuples.borrow().len());
+        self.set_tuples(MdDownRight, Coord{row: 0, col: 0},
+                        Coord{row: board_tp_count, col: board_tp_count});
 
-        index = self.set_tuples(MdDownLeft, Coord{row: 0, col: 4},
-                                Coord{row: board_tp_count, col: board_tp_count});
-        self.tuple_indices.insert(MdDownLeft, index);
+        tuple_indices_ref.insert(MdDownLeft, self.tuples.borrow().len());
+        self.set_tuples(MdDownLeft, Coord{row: 0, col: 4},
+                        Coord{row: board_tp_count, col: board_tp_count});
     }
 
-    fn set_tuples(&mut self, md: MoveDirection, offset: Coord, count: Coord) -> usize {
+    fn set_tuples(&self, md: MoveDirection, offset: Coord, count: Coord) {
         let end = offset + count;
-        let index = self.tuples.len();
 
         for row in offset.row..end.row {
             for col in offset.col..end.col {
-                let board_rc = self.get_board_rc();
-                self.tuples.push(Tuple::create_with_md(5, board_rc, Coord{row, col}, md));
+                self.tuples.borrow_mut()
+                    .push(Tuple::create_with_md(5, self.board.clone(), Coord{row, col}, md));
             }
         }
-
-        return index;
     }
 
-    fn update_evaluation_by_event(&mut self, md: &[MoveDirection], event: BoardEvent) {
+    fn update_evaluation_by_event(&self, md: &[MoveDirection], event: BoardEvent) {
+        /*
         let coord = event.get_coord();
         let chess = event.get_chess();
         let mut coord_md = [coord, coord];
@@ -182,8 +173,9 @@ impl RuleChecker {
                 }
             }
         }
+        */
 
-        println!("coords: {:?}", coord_md);
+        //println!("coords: {:?}", coord_md);
         /*
         let mut line = Vec::new();
         let chess = event.get_chess();
@@ -198,16 +190,14 @@ impl RuleChecker {
 
     }
 
-    fn update_tuple_evaluation(&mut self, coord_and_chess: CoordAndChess,
+    fn update_tuple_evaluation(&self, coord_and_chess: CoordAndChess,
                                md: MoveDirection, event: BoardEvent) {
         //let mut line = VecDeque::new();
     }
 
     fn move_to(&self, coord_and_chess: CoordAndChess, md: MoveDirection) -> MoveResult {
-        let board_rc = self.get_board_rc();
-        let board_ref = board_rc.borrow();
-        match board_ref.move_to(coord_and_chess.coord, md) {
-            Ok(coord) => match board_ref.get_cross_point_type_at(coord) {
+        match self.board.move_to(coord_and_chess.coord, md) {
+            Ok(coord) => match self.board.get_cross_point_type_at(coord) {
                 CptEmpty => return MrSuccessful(CoordAndCrossPoint{coord, cross_point: CptEmpty}),
                 CptChess(chess) => match chess == coord_and_chess.chess {
                     false => return MrFailed(MftDifferenceChess),

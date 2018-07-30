@@ -87,44 +87,44 @@ impl BoardEvent {
 
 
 pub trait BoardObserver {
-    fn board_updated(&mut self, event: BoardEvent);
+    fn board_updated(&self, event: BoardEvent);
 }
 
 
 pub struct Board {
     size: usize,
     cp_count: usize,
-    cross_points: Vec<Rc<RefCell<CrossPoint>>>,
-    observers: Vec<Weak<RefCell<BoardObserver>>>,
+    cross_points: Vec<Rc<CrossPoint>>,
+    observers: RefCell<Vec<Weak<BoardObserver>>>,
 }
 
 impl Board {
-    pub fn new() -> Self {
+    pub fn new() -> Rc<Board> {
         let mut b = Board {
             size: 15,
             cp_count: 15 * 15,
             cross_points: Vec::new(),
-            observers: Vec::new(),
+            observers: RefCell::new(Vec::new()),
         };
 
         for _i in 0..b.cp_count {
-            b.cross_points.push(Rc::new(RefCell::new(CrossPoint::new())));
+            b.cross_points.push(CrossPoint::new());
         }
-        return b;
+        return Rc::new(b);
     }
 
-    pub fn create_with_size(size: usize) -> Self {
+    pub fn create_with_size(size: usize) -> Rc<Board> {
         let mut b = Board {
             size,
             cp_count: size * size,
             cross_points: Vec::new(),
-            observers: Vec::new(),
+            observers: RefCell::new(Vec::new()),
         };
 
         for _i in 0..b.cp_count {
-            b.cross_points.push(Rc::new(RefCell::new(CrossPoint::new())));
+            b.cross_points.push(CrossPoint::new());
         }
-        return b;
+        return Rc::new(b);
     }
 
     pub fn size(&self) -> usize {
@@ -148,7 +148,7 @@ impl Board {
             panic!("coord is not valid");
         }
 
-        return self.cross_points[self.coord_to_index(coord)].borrow().have_chess();
+        return self.cross_points[self.coord_to_index(coord)].have_chess();
     }
 
     pub fn get_chess_at(&self, coord: Coord) -> ChessType {
@@ -156,28 +156,28 @@ impl Board {
             panic!("coord is not valid");
         }
 
-        return self.cross_points[self.coord_to_index(coord)].borrow().get_chess();
+        return self.cross_points[self.coord_to_index(coord)].get_chess();
     }
 
-    pub fn put_chess_at(& mut self, coord: Coord, chess: ChessType) {
+    pub fn put_chess_at(&self, coord: Coord, chess: ChessType) {
         if !self.is_index_valid(coord) {
             panic!("coord is not valid");
         }
 
         let index = self.coord_to_index(coord);
-        self.cross_points[index].borrow_mut().put_chess(chess);
+        self.cross_points[index].put_chess(chess);
 
         self.notify_observers(BoardEvent::BoPutChess(CoordAndChess {coord, chess}));
     }
 
-    pub fn remove_chess_at(& mut self, coord: Coord) -> ChessType {
+    pub fn remove_chess_at(&self, coord: Coord) -> ChessType {
         if !self.is_index_valid(coord) {
             panic!("coord is not valid");
         }
 
         let index = self.coord_to_index(coord);
-        let chess = self.cross_points[index].borrow().get_chess();
-        self.cross_points[index].borrow_mut().remove_chess();
+        let chess = self.cross_points[index].get_chess();
+        self.cross_points[index].remove_chess();
 
         self.notify_observers(BoardEvent::BoRemoveChess(CoordAndChess {coord, chess}));
         return chess;
@@ -188,7 +188,7 @@ impl Board {
             panic!("coord is not valid");
         }
 
-        return self.cross_points[coord.row * self.size + coord.col].borrow().get_cross_point_type();
+        return self.cross_points[self.coord_to_index(coord)].get_cross_point_type();
     }
 
     pub fn move_to(&self, coord: Coord, md: MoveDirection)
@@ -223,20 +223,38 @@ impl Board {
         }
     }
 
-    pub fn get_cross_point_at(&self, coord: Coord) -> Rc<RefCell<CrossPoint>> {
+    pub fn get_cross_point_at(&self, coord: Coord) -> Rc<CrossPoint> {
         return self.cross_points[self.coord_to_index(coord)].clone();
     }
 
-    pub fn add_observers<T>(&mut self, observer: Weak<RefCell<T>>)
+    pub fn add_observers<T>(&self, observer: Weak<T>)
         where T: BoardObserver + 'static {
-        self.observers.push(observer);
+        self.observers.borrow_mut().push(observer);
     }
 
-    pub fn notify_observers(&mut self, event: BoardEvent) {
-        for i in 0..self.observers.len() {
-            match self.observers[i].upgrade() {
-                Some(observer_rc) => {observer_rc.borrow_mut().board_updated(event);},
-                None => {self.observers.remove(i);},
+    // =======================================================
+    // will panic!
+    pub fn remove_observers<T>(&self, observer: Rc<T>)
+        where T: BoardObserver + 'static {
+        let len = self.observers.borrow().len();
+        for i in 0..len {
+            match self.observers.borrow()[i].upgrade() {
+                Some(observer_rc) => {
+                    match Rc::into_raw(observer_rc.clone()) == Rc::into_raw(observer.clone()) {
+                        true => self.observers.borrow_mut().remove(i),
+                        false => continue,
+                    }
+                },
+                None => self.observers.borrow_mut().remove(i),
+            };
+        }
+    }
+
+    pub fn notify_observers(&self, event: BoardEvent) {
+        for observer in self.observers.borrow().iter() {
+            match observer.upgrade() {
+                Some(observer_rc) => observer_rc.board_updated(event),
+                None => continue,
             }
         }
     }

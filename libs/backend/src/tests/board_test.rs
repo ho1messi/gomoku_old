@@ -33,7 +33,7 @@ fn index_valid() {
 #[test]
 fn chess() {
     //let mut b = Board::new();
-    let mut b = Board::create_with_size(3);
+    let b = Board::create_with_size(3);
 
     for i in 0..3 {
         for j in 0..3 {

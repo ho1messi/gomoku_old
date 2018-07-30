@@ -5,7 +5,7 @@ fn get_and_set() {
     let cp = CrossPoint::new();
     assert_eq!(cp.have_chess(), false);
 
-    let mut cp = CrossPoint::create_with_chess(ChessType::CtBlack);
+    let cp = CrossPoint::create_with_chess(ChessType::CtBlack);
     assert_eq!(cp.have_chess(), true);
     assert_eq!(cp.get_chess(), ChessType::CtBlack);
     assert_eq!(cp.get_cross_point_type(), CrossPointType::CptChess(ChessType::CtBlack));
@@ -38,20 +38,20 @@ fn get_chess_panic() {
 #[test]
 #[should_panic]
 fn remove_chess_panic() {
-    let mut cp = CrossPoint::new();
+    let cp = CrossPoint::new();
     cp.remove_chess();
 }
 
 #[test]
 #[should_panic]
 fn put_chess_panic_1() {
-    let mut cp = CrossPoint::create_with_chess(ChessType::CtBlack);
+    let cp = CrossPoint::create_with_chess(ChessType::CtBlack);
     cp.put_chess(ChessType::CtWhite);
 }
 
 #[test]
 #[should_panic]
 fn put_chess_panic_2() {
-    let mut cp = CrossPoint::create_with_chess(ChessType::CtWhite);
+    let cp = CrossPoint::create_with_chess(ChessType::CtWhite);
     cp.put_chess(ChessType::CtBlack);
 }

@@ -1,3 +1,6 @@
+use std::rc::Rc;
+use std::cell::Cell;
+
 use self::ChessType::*;
 use self::CrossPointType::*;
 
@@ -22,49 +25,49 @@ pub enum CrossPointType {
     CptChess(ChessType),
 }
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct CrossPoint {
-    status: CrossPointType,
+    status: Cell<CrossPointType>,
 }
 
 impl CrossPoint {
-    pub fn new() -> Self {
-        let cp = CrossPoint{status: CptEmpty};
+    pub fn new() -> Rc<CrossPoint> {
+        let cp = Rc::new(CrossPoint{status: Cell::new(CptEmpty)});
         return cp;
     }
 
-    pub fn create_with_chess(chess: ChessType) -> Self {
-        let cp = CrossPoint{status: CptChess(chess)};
+    pub fn create_with_chess(chess: ChessType) -> Rc<CrossPoint> {
+        let cp = Rc::new(CrossPoint{status: Cell::new(CptChess(chess))});
         return cp;
     }
 
     pub fn have_chess(&self) -> bool {
-        return self.status != CptEmpty;
+        return self.status.get() != CptEmpty;
     }
 
     pub fn get_chess(&self) -> ChessType {
-        return match self.status {
+        return match self.status.get() {
             CptChess(CtBlack) => CtBlack,
             CptChess(CtWhite) => CtWhite,
             CptEmpty => panic!("no chess in this cross point"),
         }
     }
 
-    pub fn put_chess(& mut self, chess: ChessType) {
-        match self.status {
-            CptEmpty => self.status = CptChess(chess),
+    pub fn put_chess(&self, chess: ChessType) {
+        match self.status.get() {
+            CptEmpty => self.status.set(CptChess(chess)),
             _ => panic!("there already have a chess"),
         }
     }
 
-    pub fn remove_chess(& mut self) {
-        match self.status {
-            CptChess(_) => self.status = CptEmpty,
+    pub fn remove_chess(&self) {
+        match self.status.get() {
+            CptChess(_) => self.status.set(CptEmpty),
             _ => panic!("no chess to remove here"),
         }
     }
 
     pub fn get_cross_point_type(&self) -> CrossPointType {
-        return self.status;
+        return self.status.get();
     }
 }
