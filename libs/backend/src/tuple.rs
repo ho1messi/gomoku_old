@@ -16,7 +16,7 @@ impl Tuple {
         let mut coords = vec![coord];
         let mut cross_points = vec![board.get_cross_point_at(coord)];
         for _i in 1..size {
-            coord = board.move_to(coord, md).unwrap();
+            coord = board.move_by_coord(coord, md).unwrap();
             coords.push(coord);
             cross_points.push(board.get_cross_point_at(coord));
         }

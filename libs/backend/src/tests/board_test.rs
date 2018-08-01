@@ -56,37 +56,37 @@ fn move_to() {
 
     for i in 1..14 {
         for j in 1..14 {
-            assert_eq!(b.move_to(Coord{row: i, col: j}, MdUp),
+            assert_eq!(b.move_by_coord(Coord{row: i, col: j}, MdUp),
                        Ok(Coord{row: i - 1, col: j}));
-            assert_eq!(b.move_to(Coord{row: i, col: j}, MdDown),
+            assert_eq!(b.move_by_coord(Coord{row: i, col: j}, MdDown),
                        Ok(Coord{row: i + 1, col: j}));
-            assert_eq!(b.move_to(Coord{row: i, col: j}, MdLeft),
+            assert_eq!(b.move_by_coord(Coord{row: i, col: j}, MdLeft),
                        Ok(Coord{row: i, col: j - 1}));
-            assert_eq!(b.move_to(Coord{row: i, col: j}, MdRight),
+            assert_eq!(b.move_by_coord(Coord{row: i, col: j}, MdRight),
                        Ok(Coord{row: i, col: j + 1}));
-            assert_eq!(b.move_to(Coord{row: i, col: j}, MdUpLeft),
+            assert_eq!(b.move_by_coord(Coord{row: i, col: j}, MdUpLeft),
                        Ok(Coord{row: i - 1, col: j - 1}));
-            assert_eq!(b.move_to(Coord{row: i, col: j}, MdUpRight),
+            assert_eq!(b.move_by_coord(Coord{row: i, col: j}, MdUpRight),
                        Ok(Coord{row: i - 1, col: j + 1}));
-            assert_eq!(b.move_to(Coord{row: i, col: j}, MdDownLeft),
+            assert_eq!(b.move_by_coord(Coord{row: i, col: j}, MdDownLeft),
                        Ok(Coord{row: i + 1, col: j - 1}));
-            assert_eq!(b.move_to(Coord{row: i, col: j}, MdDownRight),
+            assert_eq!(b.move_by_coord(Coord{row: i, col: j}, MdDownRight),
                        Ok(Coord{row: i + 1, col: j + 1}));
         }
     }
 
     for i in 0..15 {
-        assert_eq!(b.move_to(Coord{row: 0, col: i}, MdUp).is_err(), true);
-        assert_eq!(b.move_to(Coord{row: 0, col: i}, MdUpLeft).is_err(), true);
-        assert_eq!(b.move_to(Coord{row: 0, col: i}, MdUpRight).is_err(), true);
-        assert_eq!(b.move_to(Coord{row: 14, col: i}, MdDown).is_err(), true);
-        assert_eq!(b.move_to(Coord{row: 14, col: i}, MdDownLeft).is_err(), true);
-        assert_eq!(b.move_to(Coord{row: 14, col: i}, MdDownRight).is_err(), true);
-        assert_eq!(b.move_to(Coord{row: i, col: 0}, MdLeft).is_err(), true);
-        assert_eq!(b.move_to(Coord{row: i, col: 0}, MdUpLeft).is_err(), true);
-        assert_eq!(b.move_to(Coord{row: i, col: 0}, MdDownLeft).is_err(), true);
-        assert_eq!(b.move_to(Coord{row: i, col: 14}, MdRight).is_err(), true);
-        assert_eq!(b.move_to(Coord{row: i, col: 14}, MdUpRight).is_err(), true);
-        assert_eq!(b.move_to(Coord{row: i, col: 14}, MdDownRight).is_err(), true);
+        assert_eq!(b.move_by_coord(Coord{row: 0, col: i}, MdUp).is_err(), true);
+        assert_eq!(b.move_by_coord(Coord{row: 0, col: i}, MdUpLeft).is_err(), true);
+        assert_eq!(b.move_by_coord(Coord{row: 0, col: i}, MdUpRight).is_err(), true);
+        assert_eq!(b.move_by_coord(Coord{row: 14, col: i}, MdDown).is_err(), true);
+        assert_eq!(b.move_by_coord(Coord{row: 14, col: i}, MdDownLeft).is_err(), true);
+        assert_eq!(b.move_by_coord(Coord{row: 14, col: i}, MdDownRight).is_err(), true);
+        assert_eq!(b.move_by_coord(Coord{row: i, col: 0}, MdLeft).is_err(), true);
+        assert_eq!(b.move_by_coord(Coord{row: i, col: 0}, MdUpLeft).is_err(), true);
+        assert_eq!(b.move_by_coord(Coord{row: i, col: 0}, MdDownLeft).is_err(), true);
+        assert_eq!(b.move_by_coord(Coord{row: i, col: 14}, MdRight).is_err(), true);
+        assert_eq!(b.move_by_coord(Coord{row: i, col: 14}, MdUpRight).is_err(), true);
+        assert_eq!(b.move_by_coord(Coord{row: i, col: 14}, MdDownRight).is_err(), true);
     }
 }

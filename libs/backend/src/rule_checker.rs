@@ -242,7 +242,7 @@ impl RuleChecker {
     }
 
     fn move_to(&self, coord_and_chess: CoordAndChess, md: MoveDirection) -> MoveResult {
-        match self.board.move_to(coord_and_chess.coord, md) {
+        match self.board.move_by_coord(coord_and_chess.coord, md) {
             Ok(coord) => match self.board.get_cross_point_type_at(coord) {
                 CptEmpty => return MrSuccessful(CoordAndCrossPoint{coord, cross_point: CptEmpty}),
                 CptChess(chess) => match chess == coord_and_chess.chess {

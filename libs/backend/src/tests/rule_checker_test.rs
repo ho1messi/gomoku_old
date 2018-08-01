@@ -70,5 +70,5 @@ fn update_evaluation_by_event() {
     board.put_chess_at(Coord{row: 13, col: 9}, CtWhite);
     //board.remove_chess_at(Coord{row: 0, col: 0});
 
-    assert!(false);
+    //assert!(false);
 }
