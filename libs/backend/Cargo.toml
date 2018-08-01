@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["Ho1messi <1017145733@qq.com>"]
 
 [dependencies]
+slice-deque = "0.1.11"

@@ -1,6 +1,3 @@
-use std::rc::*;
-use std::cell::*;
-
 use super::super::cross_point::*;
 use super::super::board::*;
 use super::super::tuple::*;

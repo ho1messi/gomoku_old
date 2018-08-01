@@ -1,7 +1,7 @@
 use std::rc::*;
 use std::cell::*;
 use std::collections::HashMap;
-use std::collections::VecDeque;
+use super::slice_deque::SliceDeque;
 
 use super::evaluation_dfa::*;
 use super::board::*;
@@ -176,8 +176,8 @@ impl RuleChecker {
         let mut coord_md = [coord, coord];
         let mut first_chess = [FirstVisitChess::new(), FirstVisitChess::new()];
         let mut continue_flag = [true, true];
-        let mut count = 1; let mut i = 1; let max_count = 7;
-        let mut cpts = VecDeque::with_capacity(max_count); cpts.push_back(CptChess(chess));
+        let mut count = 1; let mut i = 1; let max_count = 7; let mut index = 0;
+        let mut cpts = SliceDeque::with_capacity(max_count); cpts.push_back(CptChess(chess));
 
         while count < max_count && (continue_flag[0] || continue_flag[1]){
             i = (i + 1) % 2;
@@ -188,7 +188,10 @@ impl RuleChecker {
                         first_chess[i].set_cross_point(coord_and_cross_point.cross_point);
                         coord_md[i] = coord_and_cross_point.coord;
                         match i == 0 {
-                            true => cpts.push_front(coord_and_cross_point.cross_point),
+                            true => {
+                                cpts.push_front(coord_and_cross_point.cross_point);
+                                index += 1;
+                            },
                             false => cpts.push_back(coord_and_cross_point.cross_point),
                         }
                     },
@@ -197,14 +200,20 @@ impl RuleChecker {
                             first_chess[i].set_chess(chess.get_different_chess());
                             continue_flag[i] = false;
                             match i == 0 {
-                                true => cpts.push_front(CptChess(chess.get_different_chess())),
+                                true => {
+                                    cpts.push_front(CptChess(chess.get_different_chess()));
+                                    index += 1;
+                                },
                                 false => cpts.push_back(CptChess(chess.get_different_chess())),
                             }
                         },
                         MftBoarder => {
                             continue_flag[i] = false;
                             match i == 0 {
-                                true => cpts.push_front(CptChess(chess.get_different_chess())),
+                                true => {
+                                    cpts.push_front(CptChess(chess.get_different_chess()));
+                                    index += 1;
+                                },
                                 false => cpts.push_back(CptChess(chess.get_different_chess())),
                             }
                         },
@@ -213,6 +222,7 @@ impl RuleChecker {
             }
         }
 
+        /*
         println!("mds: {:?}", md);
         println!("coords: {:?}", coord_md);
         println!("first_chess: {:?}", first_chess);
@@ -221,13 +231,18 @@ impl RuleChecker {
             println!("{:?}", cpt);
         }
         println!("=================================");
-        
+        println!("chess is {:?}", chess);
+        */
+
+        let score = self.score.get();
+        self.score.set(score + self.evaluation_dfa
+            .evaluate_event(cpts.as_mut_slice(), index, event));
         for i in 0..2 {
             match first_chess[i].get_first_chess() {
                 Some(chess_f) => match chess_f == chess {
                     true => {},
                     false => self.update_tuple_evaluation(
-                        CoordAndChess{coord: coord_md[i], chess: chess_f},
+                        CoordAndChess{coord, chess: chess_f},
                         md[i], event
                     ),
                 },
@@ -238,7 +253,37 @@ impl RuleChecker {
 
     fn update_tuple_evaluation(&self, coord_and_chess: CoordAndChess,
                                md: MoveDirection, event: BoardEvent) {
-        //let mut line = VecDeque::new();
+        let coord = coord_and_chess.coord; let chess = coord_and_chess.chess;
+        let mut coord_md = coord;
+        let mut count = 1; let max_count = 7;
+        let mut cpts = SliceDeque::with_capacity(max_count);
+        cpts.push_back(CptChess(chess.get_different_chess()));
+
+        while count < max_count {
+            count += 1;
+            match self.move_to(CoordAndChess { coord: coord_md, chess }, md) {
+                MrSuccessful(coord_and_cross_point) => {
+                    coord_md = coord_and_cross_point.coord;
+                    cpts.push_back(coord_and_cross_point.cross_point);
+                },
+                MrFailed(_) => {
+                    cpts.push_back(CptChess(chess.get_different_chess()));
+                    break;
+                },
+            }
+        }
+
+        /*
+        println!("=================================");
+        for cpt in cpts.iter() {
+            println!("{:?}", cpt);
+        }
+        println!("=================================");
+        println!("chess is {:?}", chess.get_different_chess());
+        */
+
+        let score = self.score.get();
+        self.score.set(score + self.evaluation_dfa.evaluate_event(cpts.as_mut_slice(), 0, event));
     }
 
     fn move_to(&self, coord_and_chess: CoordAndChess, md: MoveDirection) -> MoveResult {
@@ -252,7 +297,7 @@ impl RuleChecker {
             }
             Err(error) => match error.kind {
                 ErrorKind::CoordInvalid => return MrFailed(MftBoarder),
-                _ => panic!("RuleChecker move failed with error {:?}", error.message),
+                //_ => panic!("RuleChecker move failed with error {:?}", error.message),
             }
         }
     }

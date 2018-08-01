@@ -1,5 +1,4 @@
 use std::rc::*;
-use std::cell::*;
 
 use super::cross_point::*;
 use super::board::*;

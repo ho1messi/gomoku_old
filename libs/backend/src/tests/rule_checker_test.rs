@@ -1,7 +1,3 @@
-use std::rc::*;
-use std::cell::*;
-
-use super::super::cross_point::*;
 use super::super::board::*;
 use super::super::rule_checker::*;
 
@@ -66,9 +62,10 @@ fn update_evaluation_by_event() {
     let board = Board::create_with_size(15);
     let rule_checker = RuleChecker::create_with_detail(board.clone());
 
-    board.put_chess_at(Coord{row: 13, col: 8}, CtBlack);
+    board.put_chess_at(Coord{row: 13, col: 7}, CtWhite);
     board.put_chess_at(Coord{row: 13, col: 9}, CtWhite);
-    //board.remove_chess_at(Coord{row: 0, col: 0});
+    board.put_chess_at(Coord{row: 13, col: 8}, CtBlack);
+    //board.remove_chess_at(Coord{row: 13, col: 8});
 
-    //assert!(false);
+    assert!(false);
 }

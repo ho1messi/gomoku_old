@@ -16,7 +16,7 @@ fn get_and_set() {
     assert_eq!(cp.get_chess(), ChessType::CtWhite);
     assert_eq!(cp.get_cross_point_type(), CrossPointType::CptChess(ChessType::CtWhite));
 
-    let mut cp = CrossPoint::create_with_chess(ChessType::CtWhite);
+    let cp = CrossPoint::create_with_chess(ChessType::CtWhite);
     assert_eq!(cp.have_chess(), true);
     assert_eq!(cp.get_chess(), ChessType::CtWhite);
     assert_eq!(cp.get_cross_point_type(), CrossPointType::CptChess(ChessType::CtWhite));

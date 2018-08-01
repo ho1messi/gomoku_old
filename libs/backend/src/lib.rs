@@ -1,3 +1,5 @@
+extern crate slice_deque;
+
 pub mod rule_checker;
 pub mod evaluation_dfa;
 pub mod tuple;

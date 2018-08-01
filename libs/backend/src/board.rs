@@ -96,29 +96,29 @@ impl CrossPointLinkedList {
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub enum BoardEvent {
-    BoPutChess(CoordAndChess),
-    BoRemoveChess(CoordAndChess),
+    BePutChess(CoordAndChess),
+    BeRemoveChess(CoordAndChess),
 }
 
 impl BoardEvent {
     pub fn get_coord_and_chess(&self) -> CoordAndChess {
         match self {
-            BoardEvent::BoPutChess(coord_and_chess) => return *coord_and_chess,
-            BoardEvent::BoRemoveChess(coord_and_chess) => return *coord_and_chess,
+            BoardEvent::BePutChess(coord_and_chess) => return *coord_and_chess,
+            BoardEvent::BeRemoveChess(coord_and_chess) => return *coord_and_chess,
         }
     }
 
     pub fn get_coord(&self) -> Coord {
         match self {
-            BoardEvent::BoPutChess(coord_and_chess) => return coord_and_chess.coord,
-            BoardEvent::BoRemoveChess(coord_and_chess) => return coord_and_chess.coord,
+            BoardEvent::BePutChess(coord_and_chess) => return coord_and_chess.coord,
+            BoardEvent::BeRemoveChess(coord_and_chess) => return coord_and_chess.coord,
         }
     }
 
     pub fn get_chess(&self) -> ChessType {
         match self {
-            BoardEvent::BoPutChess(coord_and_chess) => return coord_and_chess.chess,
-            BoardEvent::BoRemoveChess(coord_and_chess) => return coord_and_chess.chess,
+            BoardEvent::BePutChess(coord_and_chess) => return coord_and_chess.chess,
+            BoardEvent::BeRemoveChess(coord_and_chess) => return coord_and_chess.chess,
         }
     }
 }
@@ -204,7 +204,7 @@ impl Board {
         let index = self.coord_to_index(coord);
         self.cross_points[index].put_chess(chess);
 
-        self.notify_observers(BoardEvent::BoPutChess(CoordAndChess {coord, chess}));
+        self.notify_observers(BoardEvent::BePutChess(CoordAndChess {coord, chess}));
     }
 
     pub fn remove_chess_at(&self, coord: Coord) -> ChessType {
@@ -216,7 +216,7 @@ impl Board {
         let chess = self.cross_points[index].get_chess();
         self.cross_points[index].remove_chess();
 
-        self.notify_observers(BoardEvent::BoRemoveChess(CoordAndChess {coord, chess}));
+        self.notify_observers(BoardEvent::BeRemoveChess(CoordAndChess {coord, chess}));
         return chess;
     }
 
