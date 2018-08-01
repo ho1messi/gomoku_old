@@ -35,6 +35,38 @@ pub enum MoveResult {
     MrFailed(MoveFailedType),
 }
 
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+struct FirstVisitChess {
+    first_chess: Option<ChessType>,
+}
+
+impl FirstVisitChess {
+    pub fn new() -> FirstVisitChess {
+        return FirstVisitChess{first_chess: None};
+    }
+
+    pub fn set_chess(&mut self, chess: ChessType) {
+        match self.first_chess {
+            Some(_) => return,
+            None => self.first_chess = Some(chess),
+        }
+    }
+
+    pub fn set_cross_point(&mut self, cp: CrossPointType) {
+        match self.first_chess {
+            Some(_) => return,
+            None => match cp {
+                CptChess(chess) => self.first_chess = Some(chess),
+                CptEmpty => return,
+            }
+        }
+    }
+
+    pub fn get_first_chess(&self) -> Option<ChessType> {
+        return self.first_chess;
+    }
+}
+
 impl MoveResult {
     pub fn is_successful(&self) -> bool {
         match self {
@@ -51,6 +83,7 @@ pub struct RuleChecker {
     score: Cell<i32>,
     tuples: RefCell<Vec<Tuple>>,
     tuple_indices: RefCell<HashMap<MoveDirection, usize>>,
+    evaluation_dfa: EvaluationDfa,
 }
 
 impl BoardObserver for RuleChecker {
@@ -74,6 +107,7 @@ impl RuleChecker {
             score: Cell::new(0),
             tuples: RefCell::new(Vec::new()),
             tuple_indices: RefCell::new(HashMap::new()),
+            evaluation_dfa: EvaluationDfa::new(),
         });
 
         rule_checker.set_all_tuples();
@@ -138,56 +172,68 @@ impl RuleChecker {
     }
 
     fn update_evaluation_by_event(&self, md: &[MoveDirection], event: BoardEvent) {
-        /*
-        let coord = event.get_coord();
-        let chess = event.get_chess();
+        let coord = event.get_coord(); let chess = event.get_chess();
         let mut coord_md = [coord, coord];
-        let mut first_chess = [None, None];
-        let mut stop_flag = [false, false];
-        let mut count = 0; let max_count = 6;
-        let mut i = 1;
+        let mut first_chess = [FirstVisitChess::new(), FirstVisitChess::new()];
+        let mut continue_flag = [true, true];
+        let mut count = 1; let mut i = 1; let max_count = 7;
+        let mut cpts = VecDeque::with_capacity(max_count); cpts.push_back(CptChess(chess));
 
-        while count < max_count {
+        while count < max_count && (continue_flag[0] || continue_flag[1]){
             i = (i + 1) % 2;
-            if stop_flag[i] != true {
+            if continue_flag[i] == true {
+                count += 1;
                 match self.move_to(CoordAndChess { coord: coord_md[i], chess }, md[i]) {
                     MrSuccessful(coord_and_cross_point) => {
+                        first_chess[i].set_cross_point(coord_and_cross_point.cross_point);
                         coord_md[i] = coord_and_cross_point.coord;
-                        count += 1;
-                        if first_chess[i] == None {
-                            match coord_and_cross_point.cross_point {
-                                CptChess(_) => first_chess[i] = Some(chess),
-                                CptEmpty => {},
-                            }
+                        match i == 0 {
+                            true => cpts.push_front(coord_and_cross_point.cross_point),
+                            false => cpts.push_back(coord_and_cross_point.cross_point),
                         }
                     },
                     MrFailed(move_failed_type) => match move_failed_type {
                         MftDifferenceChess => {
-                            if first_chess[i] == None {
-                                first_chess[i] = Some(chess.get_different_chess());
+                            first_chess[i].set_chess(chess.get_different_chess());
+                            continue_flag[i] = false;
+                            match i == 0 {
+                                true => cpts.push_front(CptChess(chess.get_different_chess())),
+                                false => cpts.push_back(CptChess(chess.get_different_chess())),
                             }
-                            stop_flag[i] = true;
                         },
-                        MftBoarder => stop_flag[i] = true,
+                        MftBoarder => {
+                            continue_flag[i] = false;
+                            match i == 0 {
+                                true => cpts.push_front(CptChess(chess.get_different_chess())),
+                                false => cpts.push_back(CptChess(chess.get_different_chess())),
+                            }
+                        },
                     }
                 }
             }
         }
-        */
 
-        //println!("coords: {:?}", coord_md);
-        /*
-        let mut line = Vec::new();
-        let chess = event.get_chess();
-        let mut row_t = row; let mut col_t = col;
-
-        unsafe {
-            let flag1 = self.move_until(&mut row_t, &mut col_t, md1, chess, &line);
-            line.clear();
-            let flag2 = self.move_until(&mut row_t, &mut col_t, md2, chess, &line);
+        println!("mds: {:?}", md);
+        println!("coords: {:?}", coord_md);
+        println!("first_chess: {:?}", first_chess);
+        println!("=================================");
+        for cpt in cpts.iter() {
+            println!("{:?}", cpt);
         }
-        */
-
+        println!("=================================");
+        
+        for i in 0..2 {
+            match first_chess[i].get_first_chess() {
+                Some(chess_f) => match chess_f == chess {
+                    true => {},
+                    false => self.update_tuple_evaluation(
+                        CoordAndChess{coord: coord_md[i], chess: chess_f},
+                        md[i], event
+                    ),
+                },
+                None => {},
+            }
+        }
     }
 
     fn update_tuple_evaluation(&self, coord_and_chess: CoordAndChess,
@@ -210,41 +256,4 @@ impl RuleChecker {
             }
         }
     }
-
-    /*
-    unsafe fn move_until(&self, row: &mut usize, col: &mut usize,
-                         md: MoveDirection, chess: ChessType,
-                         cross_points: &mut Vec<CrossPointType>) -> MovesEndReason {
-        let mut num = 1;
-
-        /*
-        while true {
-            *cross_points.push(*self.board.get_cross_point_type_at(*row, *col));
-
-            match *self.board.move_to(*row, *col, md) {
-                Ok(coord) => {row = coord.0; col = coord.1},
-                Err(_) => break,
-            }
-
-            if *self.board.have_chess_at(*row, *col) {
-                if chess == *self.board.get_chess_at(*row, *col) {
-                    num += 1;
-                } else {
-                    return MerDifferenceChess;
-                }
-            } else {
-                if num == 5 {
-                    return MerEnoughChess;
-                } else {
-                    num += 1;
-                }
-            }
-        }
-        */
-
-        return MerBoarder;
-    }
-    */
-
-    //unsafe fn tuple_evaluation(&mut self, mut row: usize, mut col: usize, md: MoveDirection, )
 }

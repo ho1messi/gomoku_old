@@ -232,13 +232,12 @@ impl Board {
         self.observers.borrow_mut().push(observer);
     }
 
-    // =======================================================
-    // will panic!
     pub fn remove_observers<T>(&self, observer: Rc<T>)
         where T: BoardObserver + 'static {
         let len = self.observers.borrow().len();
         for i in 0..len {
-            match self.observers.borrow()[i].upgrade() {
+            let result = self.observers.borrow()[i].upgrade();
+            match result {
                 Some(observer_rc) => {
                     match Rc::into_raw(observer_rc.clone()) == Rc::into_raw(observer.clone()) {
                         true => self.observers.borrow_mut().remove(i),

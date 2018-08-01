@@ -1,6 +1,7 @@
 use std::rc::*;
 use std::cell::*;
 
+use super::super::cross_point::*;
 use super::super::board::*;
 use super::super::rule_checker::*;
 
@@ -62,23 +63,12 @@ fn check_game_status() {
 
 #[test]
 fn update_evaluation_by_event() {
-    let board = Board::create_with_size(5);
+    let board = Board::create_with_size(15);
     let rule_checker = RuleChecker::create_with_detail(board.clone());
 
-    println!("strong count of board is {}", Rc::strong_count(&board));
-    println!("strong count of rule_checker is {}", Rc::strong_count(&rule_checker));
-
-    for row in 0..board.size() {
-        for col in 0..board.size() {
-            let coord = Coord{row, col};
-            println!("strong count of cross_point_{} in board is {}", board.coord_to_index(coord),
-                     Rc::strong_count(&board.get_cross_point_at(coord)));
-        }
-    }
-
-    //let a = Rc::into_raw(rule_checker.clone());
-    //board.remove_observers(rule_checker.clone());
-    //println!("strong count of rule_checker is {}", Rc::strong_count(&rule_checker));
+    board.put_chess_at(Coord{row: 13, col: 8}, CtBlack);
+    board.put_chess_at(Coord{row: 13, col: 9}, CtWhite);
+    //board.remove_chess_at(Coord{row: 0, col: 0});
 
     assert!(false);
 }
