@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html window-icon="gomoku.ico">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>五子棋</title>
+    <style type="text/css">
+        body {
+            background-color: #ddd;
+            margin: 0;
+        }
+
+        .board-container {
+            float: left;
+            margin: 13px;
+        }
+
+        .board {
+            background-image: url(board.jpg);
+            width: 535px;
+            height: 535px;
+        }
+
+        .button-container {
+            padding: 10px;
+            margin-left: 548px;
+        }
+
+        .option-container {
+            margin: 10px;
+            border: 1px solid #999;
+            border-radius: 10px;
+        }
+        
+        .option-button {
+            display: block;
+            width: 97px;
+            height: 30px;
+            margin: 40px auto;
+        }
+
+        .option-select {
+            display: block;
+            width: 110px;
+            height: 30px;
+            margin: 40px auto;
+            border: 1px solid rgba(34,36,38,.15);
+            border-radius: 4px;
+            text-align: center;
+            text-indent: 17px;
+            line-height: 1.8em;
+        }
+
+        .option-select option {
+            text-indent: 0;
+        }
+    </style>
+
+    <script type="text/tiscript" src="gomoku.tis"></script>
+</head>
+<body>
+    <div class="board-container">
+        <div class="board">
+
+        </div>
+    </div>
+    <div class="button-container">
+        <div class="option-container">
+            <select class="option-select" id="chess-color" onchange="on_chess_color_changed(this.value)">
+                <option value="black">黑子</option>
+                <option value="white">白子</option>
+            </select>
+            <select class="option-select" id="bot-difficulty">
+                <option value="easy">简单</option>
+                <option value="hard" selected="selected">困难</option>
+            </select>
+            <button class="option-button" id="back-move">悔棋</button>
+            <button class="option-button" id="restart-game">重玩</button>
+        </div>
+        <div class="option-container">
+            <button class="option-button" id="next-step">提示</button>
+            <select class="option-select" id="assist-ability">
+                <option value="newbee">新手</option>
+                <option value="superior" selected="selected">高手</option>
+            </select>
+        </div>
+    </div>
+</body>
+</html>

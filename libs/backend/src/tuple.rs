@@ -1,7 +1,7 @@
 use std::rc::*;
 
-use super::cross_point::*;
-use super::board::*;
+use cross_point::*;
+use board::*;
 
 pub struct Tuple {
     size: usize,

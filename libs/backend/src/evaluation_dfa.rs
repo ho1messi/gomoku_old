@@ -1,8 +1,8 @@
-use super::cross_point::*;
-use super::board::*;
+use cross_point::*;
+use board::*;
 
-use super::cross_point::CrossPointType::*;
-use super::board::BoardEvent::*;
+use cross_point::CrossPointType::*;
+use board::BoardEvent::*;
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug)]
 enum DfaStatus {

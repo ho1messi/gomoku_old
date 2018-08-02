@@ -4,8 +4,8 @@ use std::ops::Add;
 use std::collections::HashMap;
 
 use self::MoveDirection::*;
-use super::cross_point::*;
-use super::utils::*;
+use cross_point::*;
+use utils::*;
 
 #[derive(Hash, Eq, PartialEq, Copy, Clone, Debug)]
 pub enum MoveDirection {

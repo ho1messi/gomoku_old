@@ -1,0 +1,32 @@
+var game_config = {
+    chess_color: "black";
+    bot_difficulty: "easy";
+    assist_ability: "superior";
+}
+
+$(select#chess-color).on("change", function() {
+    game_config.chess_color = $(select#chess-color).value;
+    stdout.println(game_config.chess_color);
+});
+
+$(select#bot-difficulty).on("change", function() {
+    game_config.bot_difficulty = $(select#bot-difficulty).value;
+    stdout.println(game_config.bot_difficulty);
+});
+
+$(select#assist-ability).on("change", function() {
+    game_config.assist_ability = $(select#assist-ability).value;
+    stdout.println(game_config.assist_ability);
+});
+
+$(button#back-move).on("click", function() {
+    stdout.println("back-move");
+});
+
+$(button#restart-game).on("click", function() {
+    stdout.println("restart-game");
+});
+
+$(button#next-step).on("click", function() {
+    stdout.println("next-step");
+});

@@ -1,17 +1,17 @@
 use std::rc::*;
 use std::cell::*;
 use std::collections::HashMap;
-use super::slice_deque::SliceDeque;
+use slice_deque::SliceDeque;
 
-use super::evaluation_dfa::*;
-use super::board::*;
-use super::tuple::*;
-use super::cross_point::*;
-use super::utils::*;
+use evaluation_dfa::*;
+use board::*;
+use tuple::*;
+use cross_point::*;
+use utils::*;
 
-use super::board::MoveDirection::*;
-use super::cross_point::CrossPointType::*;
-use super::cross_point::ChessType::*;
+use board::MoveDirection::*;
+use cross_point::CrossPointType::*;
+use cross_point::ChessType::*;
 
 use self::GameStatus::*;
 use self::MoveFailedType::*;
@@ -171,6 +171,8 @@ impl RuleChecker {
         }
     }
 
+    // move by cross point linked list
+    // create a struct include SliceDeque and calculate index when push front
     fn update_evaluation_by_event(&self, md: &[MoveDirection], event: BoardEvent) {
         let coord = event.get_coord(); let chess = event.get_chess();
         let mut coord_md = [coord, coord];
