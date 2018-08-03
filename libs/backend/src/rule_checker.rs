@@ -344,8 +344,8 @@ impl RuleChecker {
     }
 
     fn get_tuple_score(&self, index: usize) -> i32 {
-        let white_score_list = vec![0, 35, 800, 15000, 800000];
-        let black_score_list = vec![0, 15, 400, 1800, 100000];
+        let white_score_list = vec![0, 35, 800, 15000, 800000, 0];
+        let black_score_list = vec![0, 15, 400, 1800, 100000, 0];
         let none_score = 7;
         let both_score = 0;
 

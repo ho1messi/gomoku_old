@@ -80,15 +80,17 @@ $(select#assist-ability).on("change", function() {
 });
 
 $(button#back-move).on("click", function() {
-    var result = view.on_back_move();
+    if (!game_status.game_over) {
+        var result = view.on_back_move();
 
-    if (result) {
-        removeChessAt(result.row, result.col);
+        if (result) {
+            removeChessAt(result.row, result.col);
 
-        game_status.last_chess = result.last_chess;
-        game_status.last_row = result.last_row;
-        game_status.last_col = result.last_col;
-        selectLastChess();
+            game_status.last_chess = result.last_chess;
+            game_status.last_row = result.last_row;
+            game_status.last_col = result.last_col;
+            selectLastChess();
+        }
     }
 });
 
