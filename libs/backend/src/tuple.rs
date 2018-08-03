@@ -66,8 +66,7 @@ impl Tuple {
         return num;
     }
 
-    pub fn have_include(&self, row: usize, col: usize) -> bool {
-        let coord = Coord{ row, col };
+    pub fn have_include(&self, coord: Coord) -> bool {
         for i in 0..self.size {
             if self.coords[i] == coord {
                 return true;

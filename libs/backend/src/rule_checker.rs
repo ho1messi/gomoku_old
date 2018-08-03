@@ -138,6 +138,45 @@ impl RuleChecker {
         return self.score.get();
     }
 
+    pub fn get_simple_play(&self) -> Coord {
+        let mut tuple_score = Vec::new();
+        let mut cp_score = Vec::new();
+        tuple_score.resize(self.tuples.borrow().len(), 0);
+
+        for row in 0..self.board.size() {
+            for col in 0..self.board.size() {
+                let index = row * self.board.size() + col;
+                cp_score.push((0, Coord{row, col}));
+            }
+        }
+
+        for i in 0..self.tuples.borrow().len() {
+            let tuple = &self.tuples.borrow()[i];
+            tuple_score[i] += self.get_tuple_score(i);
+            for row in 0..self.board.size() {
+                for col in 0..self.board.size() {
+                    if tuple.have_include(Coord{row, col}) {
+                        let index = row * self.board.size() + col;
+                        cp_score[index].0 += tuple_score[i];
+                    }
+
+                }
+            }
+        }
+
+        let mut max_score = 0; let mut max_index = 0;
+        for index in 0..cp_score.len() {
+            if !self.board.have_chess_at(cp_score[index].1) {
+                if cp_score[index].0 > max_score {
+                    max_score = cp_score[index].0;
+                    max_index = index;
+                }
+            }
+        }
+
+        return cp_score[max_index].1;
+    }
+
     fn set_all_tuples(&self) {
         let board_cp_count = self.board.size();
         let board_tp_count = board_cp_count - 5;
@@ -301,6 +340,29 @@ impl RuleChecker {
                 ErrorKind::CoordInvalid => return MrFailed(MftBoarder),
                 //_ => panic!("RuleChecker move failed with error {:?}", error.message),
             }
+        }
+    }
+
+    fn get_tuple_score(&self, index: usize) -> i32 {
+        let white_score_list = vec![0, 35, 800, 15000, 800000];
+        let black_score_list = vec![0, 15, 400, 1800, 100000];
+        let none_score = 7;
+        let both_score = 0;
+
+        let tuple = &self.tuples.borrow()[index];
+        let black_count = tuple.count(CptChess(CtBlack));
+        let white_count = tuple.count(CptChess(CtWhite));
+
+        if black_count > 0 {
+            if white_count > 0 {
+                return both_score;
+            } else {
+                return black_score_list[black_count as usize];
+            }
+        } else if white_count > 0 {
+            return white_score_list[white_count as usize];
+        } else {
+            return none_score;
         }
     }
 }

@@ -52,6 +52,16 @@ impl EventHandler {
         self.board_controller.restart_game();
         return Value::new();
     }
+
+    fn on_next_step(&self) -> Value {
+        let mut value = Value::new();
+        let step = self.board_controller.get_simple_play();
+
+        value.set_item("row", step.0);
+        value.set_item("col", step.1);
+
+        return value;
+    }
 }
 
 impl event::EventHandler for EventHandler {
@@ -63,5 +73,6 @@ impl event::EventHandler for EventHandler {
         fn on_cross_point_click(i32, i32);
         fn on_back_move();
         fn on_restart_game();
+        fn on_next_step();
     }
 }

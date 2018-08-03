@@ -13,7 +13,7 @@ for (var i = 0; i < 225; i++) {
 var game_config = {
     chess_color: "black";
     bot_difficulty: "easy";
-    assist_ability: "superior";
+    assist_ability: "master";
 }
 
 var game_status = {
@@ -108,6 +108,13 @@ $(button#restart-game).on("click", function() {
 
 $(button#next-step).on("click", function() {
     stdout.println("next-step");
+
+    if (game_config.assist_ability == "newbee") {
+        var result = view.on_next_step();
+        stdout.println("row: " + result.row + ", col: " + result.col);
+
+        $$(div#cross-point)[result.row * 15 + result.col].trigger("click");
+    }
 });
 
 for (var i = 0; i < 225; i++) {

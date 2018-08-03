@@ -92,6 +92,11 @@ impl BoardController {
         }
     }
 
+    pub fn get_simple_play(&self) -> (i32, i32) {
+        let coord = self.rule_checker.get_simple_play();
+        return (coord.row as i32, coord.col as i32);
+    }
+
     fn update_game_status(&self) {
         if self.value_changed.get() {
             if let GsGameOver(winner) = self.rule_checker.check_game_status() {
