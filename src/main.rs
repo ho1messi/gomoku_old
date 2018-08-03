@@ -1,4 +1,7 @@
+//#![windows_subsystem = "windows"]
+
 extern crate backend;
+extern crate gomoku;
 
 #[macro_use]
 extern crate sciter;
@@ -13,6 +16,7 @@ pub use sciter::value::Value;
 pub use sciter::value::FromValue;
 pub use sciter::window::Window;
 */
+use std::collections::HashMap;
 
 use sciter::host::*;
 use sciter::graphics::Image;
@@ -21,28 +25,8 @@ use sciter::window::Window;
 use sciter::value::Value;
 use sciter::HELEMENT;
 
-use std::collections::HashMap;
+use gomoku::event_handler::*;
 
-struct EventHandle {
-    root: Option<Element>,
-}
-
-impl EventHandle {
-    fn native_call(&mut self, arg: String) -> Value {
-        println!("Be called by script!");
-        return Value::from(format!("get value back, {}", arg));
-    }
-}
-
-impl sciter::dom::event::EventHandler for EventHandle {
-    fn attached(&mut self, root: HELEMENT) {
-        self.root = Some(Element::from(root));
-    }
-
-    dispatch_script_call! {
-        fn native_call(String);
-    }
-}
 
 struct LoadHandle {
     uris: Vec<String>,
@@ -67,8 +51,8 @@ impl sciter::host::HostHandler for LoadHandle {
     fn on_data_load(&mut self, pnm: &mut sciter::host::SCN_LOAD_DATA) -> Option<LOAD_RESULT> {
         let uri_t = w2s!(pnm.uri);
         for uri in self.uris.iter() {
-            println!("uri: {}", *uri);
-            println!("uri_t: {}", uri_t);
+            //println!("uri: {}", *uri);
+            //println!("uri_t: {}", uri_t);
             if uri_t.contains(uri) {
                 if let Some(data) = self.data_map.get(uri) {
                     self.data_ready(pnm.hwnd, &uri_t, data, None);
@@ -82,7 +66,7 @@ impl sciter::host::HostHandler for LoadHandle {
 }
 
 fn main() {
-    let event_handler = EventHandle{root: None};
+    let event_handler = EventHandler::new();
     let mut load_handle = LoadHandle::new();
     let mut frame = sciter::WindowBuilder::main_window().with_size((750, 600)).fixed().create();
 
@@ -90,12 +74,17 @@ fn main() {
     let board_img = include_bytes!("../resources/board.jpg");
     let white_chess_img = include_bytes!("../resources/white.png");
     let black_chess_img = include_bytes!("../resources/black.png");
+    let gomoku_css = include_bytes!("../resources/gomoku.css");
     let gomoku_tis = include_bytes!("../resources/gomoku.tis");
+    let q_tis = include_bytes!("../resources/q.tis");
+
     load_handle.add_data("gomoku.ico", gomoku_ico);
     load_handle.add_data("board.jpg", board_img);
     load_handle.add_data("white.png", white_chess_img);
     load_handle.add_data("black.png", black_chess_img);
+    load_handle.add_data("gomoku.css", gomoku_css);
     load_handle.add_data("gomoku.tis", gomoku_tis);
+    load_handle.add_data("q.tis", q_tis);
 
     let html = include_bytes!("../resources/gomoku.htm");
     frame.event_handler(event_handler);

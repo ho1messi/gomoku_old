@@ -1,13 +1,3 @@
-function putChessAt(row, col, chess) {
-    var crossPoint = q("div#board-col").eq(row.toInteger() * 15 + col.toInteger());
-    if (!crossPoint.css("background-image")) {
-        stdout.println("put chess");
-        crossPoint.css("background-image", "url(" + chess + ".png)");
-    } else {
-        stdout.println("can not put chess");
-    }
-}
-
 for (var i = 0; i < 15; i++) {
     $(div#board).append("<div class=\"board-row\" id=\"board-row\"></div>");
 }
@@ -26,6 +16,37 @@ var game_config = {
     assist_ability: "superior";
 }
 
+var game_status = {
+    game_over: false;
+}
+
+function putChessAt(row, col, chess) {
+    var crossPoint = q("div#board-col").eq(row.toInteger() * 15 + col.toInteger());
+    crossPoint.css("background-image", "url(" + chess + ".png)");
+}
+
+function removeChessAt(row, col) {
+    var crossPoint = q("div#board-col").eq(row.toInteger() * 15 + col.toInteger());
+    crossPoint.css("background-image", "none");
+}
+
+function showResult(winner) {
+    var winner_c = "错误";
+    if (winner == "black") 
+        winner_c = "黑棋";
+    else if (winner == "white") 
+        winner_c = "白棋";
+    var choose = view.msgbox(#infomation, winner_c + "胜", "游戏结束", [
+        {id: #replay, text: "重玩"},
+        {id: #wait, text: "查看"}
+    ]);
+
+    if (choose == "replay")
+        $(button#restart-game).trigger("click");
+    else if (choose == "wait")
+        game_status.game_over = true;
+}
+
 $(select#chess-color).on("change", function() {
     game_config.chess_color = $(select#chess-color).value;
     stdout.println(game_config.chess_color);
@@ -42,11 +63,19 @@ $(select#assist-ability).on("change", function() {
 });
 
 $(button#back-move).on("click", function() {
-    stdout.println("back-move");
+    var result = view.on_back_move();
+    removeChessAt(result.row, result.col);
 });
 
 $(button#restart-game).on("click", function() {
-    stdout.println("restart-game");
+    view.on_restart_game();
+    for (var i = 0; i < 15; i++) {
+        for (var j = 0; j < 15; j++) {
+            removeChessAt(i, j);
+        }
+    }
+
+    game_status.game_over = false;
 });
 
 $(button#next-step).on("click", function() {
@@ -55,7 +84,15 @@ $(button#next-step).on("click", function() {
 
 for (var i = 0; i < 225; i++) {
     $$(div#board-col)[i].on("click", function() {
-        putChessAt(this.attributes["_row"], this.attributes["_col"], "black");
-        stdout.println("cross point (" + this.attributes["_row"] + ", " + this.attributes["_col"] + ") clicked");
+        var row = this.attributes["_row"].toInteger();
+        var col = this.attributes["_col"].toInteger();
+        var crossPoint = $$(this);
+        if (!crossPoint.css("background-image") && !game_status.game_over) {
+            var result = view.on_cross_point_click(row, col);
+            putChessAt(row, col, result.current_chess);
+            if (result.have_game_over) {
+                showResult(result.winner);
+            }
+        }
     });
 }
