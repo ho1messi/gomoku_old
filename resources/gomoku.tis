@@ -1,3 +1,25 @@
+function putChessAt(row, col, chess) {
+    var crossPoint = q("div#board-col").eq(row.toInteger() * 15 + col.toInteger());
+    if (!crossPoint.css("background-image")) {
+        stdout.println("put chess");
+        crossPoint.css("background-image", "url(" + chess + ".png)");
+    } else {
+        stdout.println("can not put chess");
+    }
+}
+
+for (var i = 0; i < 15; i++) {
+    $(div#board).append("<div class=\"board-row\" id=\"board-row\"></div>");
+}
+for (var i = 0; i < 15; i++) {
+    for (var j = 0; j < 15; j++) {
+        $$(div#board-row)[i].append("<div class=\"board-col\" id=\"board-col\" _row=\"" + i + "\" _col=\"" + j + "\"></div>");
+    }
+}
+for (var i = 0; i < 225; i++) {
+    $$(div#board-col)[i].append("<div class=\"cross-point\"></div>");
+}
+
 var game_config = {
     chess_color: "black";
     bot_difficulty: "easy";
@@ -30,3 +52,10 @@ $(button#restart-game).on("click", function() {
 $(button#next-step).on("click", function() {
     stdout.println("next-step");
 });
+
+for (var i = 0; i < 225; i++) {
+    $$(div#board-col)[i].on("click", function() {
+        putChessAt(this.attributes["_row"], this.attributes["_col"], "black");
+        stdout.println("cross point (" + this.attributes["_row"] + ", " + this.attributes["_col"] + ") clicked");
+    });
+}

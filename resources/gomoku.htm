@@ -12,12 +12,38 @@
         .board-container {
             float: left;
             margin: 13px;
+            width: 535px;
+            height: 535px;
         }
 
         .board {
             background-image: url(board.jpg);
+            background-repeat: no-repeat;
+            background-size: 535px 535px;
             width: 535px;
             height: 535px;
+            padding: 5px 0 0 5px;
+        }
+
+        .board-row {
+            margin: 0;
+            padding: 0;
+            height: 35px;
+        }
+
+        .board-col {
+            display: inline-block;
+            background-repeat: no-repeat;
+            background-size: 33px;
+            width: 35px;
+            height: 35px;
+        }
+
+        .cross-point {
+            width: 25px;
+            height: 25px;
+            margin: 5px;
+            cursor: pointer;
         }
 
         .button-container {
@@ -55,12 +81,12 @@
         }
     </style>
 
+    <script type="text/tiscript" src="q.tis"></script>
     <script type="text/tiscript" src="gomoku.tis"></script>
 </head>
 <body>
     <div class="board-container">
-        <div class="board">
-
+        <div class="board" id="board">
         </div>
     </div>
     <div class="button-container">
