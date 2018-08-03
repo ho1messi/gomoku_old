@@ -28,7 +28,7 @@ body {
 .board-col {
     display: inline-block;
     background-repeat: no-repeat;
-    background-size: 33px;
+    background-size: 35px;
     width: 35px;
     height: 35px;
 }

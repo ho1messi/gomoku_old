@@ -39,6 +39,12 @@ impl EventHandler {
             value.set_item("row", coord.0);
             value.set_item("col", coord.1);
         }
+
+        if let Some(last_step) = self.board_controller.get_last_step() {
+            value.set_item("last_row", last_step.0);
+            value.set_item("last_col", last_step.1);
+            value.set_item("last_chess", last_step.2);
+        }
         return value;
     }
 

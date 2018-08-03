@@ -43,8 +43,8 @@ impl BoardController {
     pub fn put_chess(&self, row: i32, col: i32) {
         let coord = Coord{row: row as usize, col: col as usize};
         self.board.put_chess_at(coord, self.chess.get());
-        self.chess.set(self.chess.get().get_different_chess());
         self.steps.borrow_mut().push(CoordAndChess{coord, chess: self.chess.get()});
+        self.chess.set(self.chess.get().get_different_chess());
         self.value_changed.set(true);
     }
 
@@ -56,6 +56,16 @@ impl BoardController {
             self.value_changed.set(true);
             return Some((coord.row as i32, coord.col as i32));
         };
+
+        return None;
+    }
+
+    pub fn get_last_step(&self) -> Option<(i32, i32, String)> {
+        if let Some(last_step) = self.steps.borrow().last() {
+            let coord = last_step.coord;
+            let chess = self.chess_type_to_str(last_step.chess).to_string();
+            return Some((coord.row as i32, coord.col as i32, chess));
+        }
 
         return None;
     }

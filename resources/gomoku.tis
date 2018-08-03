@@ -7,7 +7,7 @@ for (var i = 0; i < 15; i++) {
     }
 }
 for (var i = 0; i < 225; i++) {
-    $$(div#board-col)[i].append("<div class=\"cross-point\"></div>");
+    $$(div#board-col)[i].append("<div class=\"cross-point\" id=\"cross-point\"></div>");
 }
 
 var game_config = {
@@ -17,12 +17,29 @@ var game_config = {
 }
 
 var game_status = {
+    last_chess: null;
+    last_row: null;
+    last_col: null;
     game_over: false;
 }
 
 function putChessAt(row, col, chess) {
-    var crossPoint = q("div#board-col").eq(row.toInteger() * 15 + col.toInteger());
-    crossPoint.css("background-image", "url(" + chess + ".png)");
+    var crossPoint = q("div#board-col").eq(row * 15 + col);
+    crossPoint.css("background-image", "url(" + chess + "_35_selection.png)");
+}
+
+function unselectLastChess() {
+    if (game_status.last_chess && game_status.last_row && game_status.last_col) {
+        var crossPoint = q("div#board-col").eq(game_status.last_row * 15 + game_status.last_col);
+        crossPoint.css("background-image", "url(" + game_status.last_chess + "_35.png)");
+    }
+}
+
+function selectLastChess() {
+    if (game_status.last_chess && game_status.last_row && game_status.last_col) {
+        var crossPoint = q("div#board-col").eq(game_status.last_row * 15 + game_status.last_col);
+        crossPoint.css("background-image", "url(" + game_status.last_chess + "_35_selection.png)");
+    }
 }
 
 function removeChessAt(row, col) {
@@ -64,7 +81,15 @@ $(select#assist-ability).on("change", function() {
 
 $(button#back-move).on("click", function() {
     var result = view.on_back_move();
-    removeChessAt(result.row, result.col);
+
+    if (result) {
+        removeChessAt(result.row, result.col);
+
+        game_status.last_chess = result.last_chess;
+        game_status.last_row = result.last_row;
+        game_status.last_col = result.last_col;
+        selectLastChess();
+    }
 });
 
 $(button#restart-game).on("click", function() {
@@ -75,6 +100,9 @@ $(button#restart-game).on("click", function() {
         }
     }
 
+    game_status.last_chess = null;
+    game_status.last_row = null;
+    game_status.last_col = null;
     game_status.game_over = false;
 });
 
@@ -83,13 +111,21 @@ $(button#next-step).on("click", function() {
 });
 
 for (var i = 0; i < 225; i++) {
-    $$(div#board-col)[i].on("click", function() {
-        var row = this.attributes["_row"].toInteger();
-        var col = this.attributes["_col"].toInteger();
+    $$(div#cross-point)[i].on("click", function() {
+        var cp = this.parent;
+        var row = cp.attributes["_row"].toInteger();
+        var col = cp.attributes["_col"].toInteger();
         var crossPoint = $$(this);
+
         if (!crossPoint.css("background-image") && !game_status.game_over) {
             var result = view.on_cross_point_click(row, col);
             putChessAt(row, col, result.current_chess);
+            unselectLastChess();
+
+            game_status.last_chess = result.current_chess;
+            game_status.last_row = row;
+            game_status.last_col = col;
+
             if (result.have_game_over) {
                 showResult(result.winner);
             }

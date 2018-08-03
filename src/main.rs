@@ -72,16 +72,20 @@ fn main() {
 
     let gomoku_ico = include_bytes!("../resources/gomoku.ico");
     let board_img = include_bytes!("../resources/board.jpg");
-    let white_chess_img = include_bytes!("../resources/white.png");
-    let black_chess_img = include_bytes!("../resources/black.png");
+    let white_chess_img = include_bytes!("../resources/white_35.png");
+    let white_chess_selection_img = include_bytes!("../resources/white_35_selection.png");
+    let black_chess_img = include_bytes!("../resources/black_35.png");
+    let black_chess_selection_img = include_bytes!("../resources/black_35_selection.png");
     let gomoku_css = include_bytes!("../resources/gomoku.css");
     let gomoku_tis = include_bytes!("../resources/gomoku.tis");
     let q_tis = include_bytes!("../resources/q.tis");
 
     load_handle.add_data("gomoku.ico", gomoku_ico);
     load_handle.add_data("board.jpg", board_img);
-    load_handle.add_data("white.png", white_chess_img);
-    load_handle.add_data("black.png", black_chess_img);
+    load_handle.add_data("white_35.png", white_chess_img);
+    load_handle.add_data("white_35_selection.png", white_chess_selection_img);
+    load_handle.add_data("black_35.png", black_chess_img);
+    load_handle.add_data("black_35_selection.png", black_chess_selection_img);
     load_handle.add_data("gomoku.css", gomoku_css);
     load_handle.add_data("gomoku.tis", gomoku_tis);
     load_handle.add_data("q.tis", q_tis);
